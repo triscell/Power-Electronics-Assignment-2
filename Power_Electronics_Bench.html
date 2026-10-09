@@ -1,0 +1,2854 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Power Electronics Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>/* Layout: a lab bench — parts tray | schematic sheet | inspector, with the scope spanning the bench below. */
+:root {
+  --bg: #E6EBEA;
+  --panel: #FAFBFB;
+  --panel2: #EEF2F1;
+  --sheet: #F7F9F8;
+  --ink: #16202A;
+  --muted: #5A6772;
+  --line: #C9D2D4;
+  --grid: #BCC8CB;
+  --wire: #1D2832;
+  --accent: #1F5BCC;
+  --accent-soft: #DCE6F8;
+  --hot: #D2480F;
+  --warn: #9A5300;
+  --err: #B42323;
+  --t1: #1F5BCC; --t2: #D2480F; --t3: #2E8540; --t4: #8E3BB8; --t5: #B8860B; --t6: #0E7C86;
+  --f-display: 'Archivo', 'Segoe UI', system-ui, sans-serif;
+  --f-body: 'Archivo', 'Segoe UI', system-ui, sans-serif;
+  --f-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1318; --panel: #151C23; --panel2: #1B242D; --sheet: #11181F; --ink: #E0E6EB; --muted: #8B98A4;
+    --line: #2A3540; --grid: #2C3945; --wire: #C8D2DB; --accent: #6E9EFF; --accent-soft: #1E2D4A; --hot: #FF8A3D;
+    --warn: #E0A040; --err: #FF6B6B;
+    --t1: #6E9EFF; --t2: #FF8A3D; --t3: #5CC97A; --t4: #C38BEB; --t5: #E3B341; --t6: #3FC1C9;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1318; --panel: #151C23; --panel2: #1B242D; --sheet: #11181F; --ink: #E0E6EB; --muted: #8B98A4;
+  --line: #2A3540; --grid: #2C3945; --wire: #C8D2DB; --accent: #6E9EFF; --accent-soft: #1E2D4A; --hot: #FF8A3D;
+  --warn: #E0A040; --err: #FF6B6B;
+  --t1: #6E9EFF; --t2: #FF8A3D; --t3: #5CC97A; --t4: #C38BEB; --t5: #E3B341; --t6: #3FC1C9;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 14px; }
+.app { max-width: 1480px; margin: 0 auto; padding-inline: 16px; padding-block: 14px 28px; display: flex; flex-direction: column; gap: 12px; }
+button, select, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* header */
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand svg { flex: none; }
+.brand h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 21px; letter-spacing: -0.01em; font-stretch: 112%; }
+.brand p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.field { display: flex; align-items: center; gap: 8px; }
+.field > span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+select { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; max-width: 320px; min-width: 0; }
+.field select { max-width: min(320px, 100%); }
+.field { min-width: 0; max-width: 100%; }
+.btn { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; font-weight: 600; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+.btn.primary:hover { filter: brightness(1.08); }
+.chk { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); user-select: none; }
+.chk input { accent-color: var(--accent); width: 15px; height: 15px; }
+
+/* bench */
+.bench { display: grid; grid-template-columns: 150px minmax(0, 1fr) 290px; gap: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; height: 540px; }
+.palette { border-right: 1px solid var(--line); background: var(--panel2); overflow-y: auto; padding: 10px 8px; display: flex; flex-direction: column; gap: 8px; }
+.pgroup { display: flex; flex-direction: column; gap: 3px; }
+.pgroup h3 { margin: 0 4px 2px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; }
+.pbtn { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 3px 6px; font-size: 12.5px; color: var(--ink); }
+.pbtn:hover { background: var(--panel); border-color: var(--line); }
+.pbtn.active { background: var(--accent-soft); border-color: var(--accent); }
+.pbtn svg { flex: none; width: 34px; height: 20px; color: var(--ink); }
+.pbtn kbd { margin-left: auto; font-family: var(--f-mono); font-size: 10px; color: var(--muted); }
+.prow { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.prow .pbtn { justify-content: center; padding: 5px 4px; font-size: 12px; }
+.pbtn:disabled { opacity: 0.4; cursor: default; }
+
+.canvasWrap { position: relative; background: var(--sheet); min-width: 0; overflow: hidden; }
+#sch { width: 100%; height: 100%; display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
+#sch.tool-wire, #sch.tool-place { cursor: crosshair; }
+.hint { position: absolute; left: 10px; bottom: 8px; right: 120px; font-size: 12px; color: var(--muted); pointer-events: none; text-shadow: 0 0 4px var(--sheet), 0 0 2px var(--sheet); }
+.zoomctl { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 4px; }
+.zoomctl button { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; min-width: 30px; height: 28px; padding: 0 8px; font-weight: 600; }
+.sheetTag { position: absolute; top: 8px; right: 10px; font-family: var(--f-mono); font-size: 11px; color: var(--muted); pointer-events: none; }
+
+/* schematic svg */
+.gdot { fill: var(--grid); }
+.wire { stroke: var(--wire); stroke-width: 2; stroke-linecap: round; fill: none; }
+.wire.sel { stroke: var(--accent); stroke-width: 3; }
+.wirehit { stroke: transparent; stroke-width: 12; fill: none; }
+.wprev { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 5 4; fill: none; }
+.comp { color: var(--wire); }
+.comp path, .comp circle { stroke: currentColor; stroke-width: 2; fill: none; stroke-linejoin: round; stroke-linecap: round; }
+.comp .fill { fill: currentColor; }
+.comp .thick { stroke-width: 3; }
+.comp .thin { stroke-width: 1.4; }
+.comp.sel { color: var(--accent); }
+.comp.on { color: var(--hot); }
+.comp.on path, .comp.on circle { stroke-width: 2.6; }
+.comp.ghost { color: var(--accent); opacity: 0.55; }
+.selhalo { fill: var(--accent-soft); stroke: none; opacity: 0.8; }
+.lbl { font-family: var(--f-body); font-size: 12px; font-weight: 700; fill: var(--ink); }
+.val { font-family: var(--f-mono); font-size: 10.5px; fill: var(--muted); }
+.lbl.on { fill: var(--hot); }
+.vletter { font-family: var(--f-body); font-size: 15px; font-weight: 700; fill: var(--wire); }
+.dot { fill: var(--wire); }
+.pin-open { fill: var(--sheet); stroke: var(--err); stroke-width: 1.6; }
+.pin1 { fill: var(--accent); }
+.wstart { fill: var(--accent); }
+
+/* inspector */
+.props { border-left: 1px solid var(--line); overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.props h2 { margin: 0; font-family: var(--f-display); font-size: 15px; font-weight: 700; }
+.ptype { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; }
+.prm { display: flex; flex-direction: column; gap: 4px; }
+.prm > span { font-size: 12px; color: var(--muted); }
+.inp { display: flex; align-items: stretch; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); overflow: hidden; }
+.inp:focus-within { border-color: var(--accent); }
+.inp input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 6px 8px; font-family: var(--f-mono); font-size: 13px; outline: none; }
+.inp em { font-style: normal; font-family: var(--f-mono); font-size: 12px; color: var(--muted); padding: 6px 8px; background: var(--panel2); border-left: 1px solid var(--line); min-width: 34px; text-align: center; }
+.inp.bad { border-color: var(--err); }
+.prm input[type=range] { width: 100%; accent-color: var(--accent); }
+.namein { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 6px 8px; font-weight: 700; font-size: 15px; width: 100%; }
+.namein.bad { border-color: var(--err); }
+.perr { color: var(--err); font-size: 12px; }
+.pnote { font-size: 12px; color: var(--muted); line-height: 1.45; margin: 0; }
+.pbtns { display: flex; flex-wrap: wrap; gap: 6px; }
+.pbtns .btn { padding: 5px 10px; font-size: 12.5px; }
+.btn.danger { color: var(--err); }
+.toggles { display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 8px; background: var(--panel2); }
+.sep { height: 1px; background: var(--line); border: 0; margin: 0; width: 100%; }
+.tips { margin: 0; padding-left: 18px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.tips b { color: var(--ink); font-weight: 600; }
+
+/* scope */
+.scope { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.scopeHead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.scopeHead h2 { margin: 0; font-family: var(--f-display); font-size: 16px; font-weight: 800; font-stretch: 112%; }
+.status { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.scopeCtl { margin-left: auto; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cursorRead { font-family: var(--f-mono); font-size: 12px; color: var(--ink); min-height: 18px; }
+.cursorRead .hot { color: var(--hot); font-weight: 600; }
+.msg { border-radius: 8px; padding: 9px 12px; font-size: 13px; line-height: 1.45; }
+.msg.err { background: color-mix(in srgb, var(--err) 12%, var(--panel)); color: var(--err); border: 1px solid color-mix(in srgb, var(--err) 40%, var(--panel)); }
+.msg.warn { background: color-mix(in srgb, var(--warn) 12%, var(--panel)); color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--panel)); }
+.msg.info { background: var(--panel2); color: var(--muted); border: 1px solid var(--line); }
+.plotWrap { position: relative; width: 100%; min-width: 0; }
+.plotWrap canvas { display: block; width: 100%; }
+#plotOver { position: absolute; left: 0; top: 0; cursor: crosshair; touch-action: pan-y; }
+.tableWrap { overflow-x: auto; }
+table.meas { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+table.meas th { text-align: right; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.meas th:first-child, table.meas td:first-child { text-align: left; }
+table.meas td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--line); font-family: var(--f-mono); white-space: nowrap; }
+table.meas td.cur { color: var(--ink); font-weight: 600; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 8px; vertical-align: -1px; }
+.tnote { font-size: 11.5px; color: var(--muted); margin: 6px 0 0; }
+
+/* modal */
+.modal { position: fixed; inset: 0; background: color-mix(in srgb, var(--ink) 40%, transparent); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+.modalBox { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; width: min(640px, 100%); max-height: 90vh; display: flex; flex-direction: column; gap: 10px; padding: 16px; }
+.modalBox h2 { margin: 0; font-family: var(--f-display); font-size: 17px; }
+.modalBox textarea { width: 100%; min-height: 260px; font-family: var(--f-mono); font-size: 12px; background: var(--panel2); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 8px; resize: vertical; }
+
+@media (max-width: 980px) {
+  .bench { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .palette { border-right: 0; border-bottom: 1px solid var(--line); flex-direction: row; flex-wrap: wrap; gap: 8px 14px; }
+  .pgroup { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px; }
+  .pgroup h3 { width: 100%; }
+  .pbtn { width: auto; }
+  .pbtn kbd { display: none; }
+  .prow { display: flex; flex-wrap: wrap; }
+  .canvasWrap { height: 380px; }
+  .props { border-left: 0; border-top: 1px solid var(--line); }
+  .hint { right: 10px; bottom: 44px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+.actions { min-width: 0; max-width: 100%; }
+.actions .field { flex: 1 1 auto; }
+.actions .field select { flex: 1 1 auto; width: 0; min-width: 0; }
+@media (min-width: 981px) { .actions .field select { width: auto; } }
+
+/* control bar */
+.ctrlBar { display: flex; flex-wrap: wrap; gap: 12px 28px; padding: 12px 14px; background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; }
+.ctrlGroup { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ctrlGroup:first-child, #dutyCtl { flex: 1 1 260px; }
+.ctrlLbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; }
+.ctrlRow { display: flex; align-items: center; gap: 10px; }
+.ctrlRow input[type=range] { flex: 1; min-width: 120px; accent-color: var(--accent); }
+.ctrlVal { font-family: var(--f-mono); font-weight: 600; font-size: 15px; min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
+.ctrlNote { font-size: 12px; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font-family: var(--f-mono); font-size: 11.5px; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); }
+.chip:hover { border-color: var(--muted); }
+.chip.on { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+.btn.small { padding: 5px 12px; font-size: 12.5px; }
+.condTag { position: absolute; top: 8px; left: 10px; font-family: var(--f-mono); font-size: 12px; font-weight: 600; color: var(--hot); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; pointer-events: none; }
+.live { font-family: var(--f-mono); font-size: 10.5px; font-weight: 600; fill: var(--hot); }
+
+/* analysis */
+.analysis { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.anHead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+.anHead h2 { margin: 0; font-family: var(--f-display); font-size: 16px; font-weight: 800; font-stretch: 112%; }
+.anSetup summary { cursor: pointer; font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.anSel { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; padding-top: 10px; }
+.anSel label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+.anSel select { max-width: 100%; }
+.metrics:empty { display: none; }
+.metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0; background: var(--panel); border-top: 1px solid var(--line); border-left: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.metric { background: var(--panel); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.metric .mk { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; }
+.metric .mv { font-family: var(--f-mono); font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.metric .md { font-size: 11.5px; color: var(--muted); line-height: 1.35; }
+.anGrid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; background: var(--panel); }
+.cardHead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.card h3 { margin: 0; font-family: var(--f-display); font-size: 14px; font-weight: 700; }
+.eq { font-family: var(--f-mono); font-size: 13px; background: var(--panel2); border-radius: 6px; padding: 8px 10px; line-height: 1.6; overflow-x: auto; white-space: pre-wrap; }
+.eq.steps { color: var(--ink); }
+.tlabel { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; }
+.cmpRow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.cmpRow > div { background: var(--panel2); border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+.cmpRow b { font-family: var(--f-mono); font-size: 16px; }
+.pill { display: inline-block; font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 2px 9px; }
+.pill.good { background: color-mix(in srgb, var(--t3) 18%, var(--panel)); color: var(--t3); }
+.pill.mid { background: color-mix(in srgb, var(--warn) 16%, var(--panel)); color: var(--warn); }
+.pill.bad { background: color-mix(in srgb, var(--err) 14%, var(--panel)); color: var(--err); }
+.tnotes { margin: 0; padding-left: 18px; font-size: 12px; color: var(--muted); line-height: 1.5; }
+.specWrap { position: relative; width: 100%; min-width: 0; }
+.specWrap canvas { display: block; width: 100%; height: 220px; }
+table.seq td:nth-child(2) { color: var(--hot); font-weight: 600; text-align: left; }
+table.seq th:nth-child(2) { text-align: left; }
+.guideBox { width: min(820px, 100%); }
+.guideBody { overflow-y: auto; font-size: 13.5px; line-height: 1.55; display: flex; flex-direction: column; gap: 10px; }
+.guideBody h3 { margin: 6px 0 0; font-family: var(--f-display); font-size: 14.5px; }
+.guideBody p, .guideBody ul { margin: 0; }
+.guideBody ul { padding-left: 18px; }
+.guideBody table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+.guideBody td, .guideBody th { border-bottom: 1px solid var(--line); padding: 5px 8px; text-align: left; vertical-align: top; }
+.guideBody td:last-child { font-family: var(--f-mono); }
+@media (max-width: 980px) { .anGrid { grid-template-columns: minmax(0, 1fr); } .cmpRow { grid-template-columns: minmax(0, 1fr); } }
+
+.nt { text-transform: none; letter-spacing: 0; }
+
+.byline { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; }
+.byline span + span::before { content: "·"; margin: 0 8px; color: var(--muted); }
+.byline .assign { color: var(--ink); font-weight: 600; }
+.byline .roll { font-family: var(--f-mono); font-size: 12.5px; }
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; padding: 10px 4px 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 12.5px; }
+.foot span:first-child { color: var(--ink); font-weight: 600; }
+@media (max-width: 980px) {
+  .actions .field { flex-basis: 100%; }
+  .byline { flex-direction: column; align-items: flex-start; }
+  .byline span + span::before { content: none; }
+}
+</style>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
+        <rect x="1" y="1" width="38" height="38" rx="8" style="fill:var(--ink)"/>
+        <path d="M6 20H13M27 20H34" style="stroke:var(--panel)" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M13 12L13 28L27 20Z" style="fill:var(--hot)"/>
+        <path d="M27 12V28M25 24L31 31" style="stroke:var(--panel)" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <h1>Power Electronics Bench</h1>
+        <p class="byline"><span class="assign">Power Electronics Assignment 2</span><span class="who">Trishnika Sen</span><span class="roll">Roll No. 24EE10102</span></p>
+      </div>
+    </div>
+    <div class="actions">
+      <label class="field"><span>Example</span>
+        <select id="exSel" aria-label="Load an example circuit"></select>
+      </label>
+      <button class="btn primary" id="runBtn" type="button">Run simulation</button>
+      <label class="chk"><input type="checkbox" id="autoRun" checked> Auto-run</label>
+      <button class="btn" id="jsonBtn" type="button">Save / load</button>
+      <button class="btn" id="guideBtn" type="button">Guide</button>
+    </div>
+  </header>
+
+  <section class="bench">
+    <nav class="palette" id="palette" aria-label="Parts and tools"></nav>
+    <div class="canvasWrap" id="canvasWrap">
+      <svg id="sch" xmlns="http://www.w3.org/2000/svg" aria-label="Schematic editor">
+        <defs>
+          <pattern id="gridpat" x="-10" y="-10" width="20" height="20" patternUnits="userSpaceOnUse">
+            <circle class="gdot" cx="10" cy="10" r="1.1"/>
+          </pattern>
+        </defs>
+        <g id="dyn"></g>
+      </svg>
+      <div class="sheetTag" id="sheetTag"></div>
+      <div class="condTag" id="condTag" hidden></div>
+      <div class="hint" id="hint"></div>
+      <div class="zoomctl">
+        <button type="button" id="zoomOut" aria-label="Zoom out">−</button>
+        <button type="button" id="zoomIn" aria-label="Zoom in">+</button>
+        <button type="button" id="fitBtn">Fit</button>
+      </div>
+    </div>
+    <aside class="props" id="props" aria-label="Inspector"></aside>
+  </section>
+
+  <section class="scope">
+    <div class="scopeHead">
+      <h2>Waveforms</h2>
+      <span class="status" id="simStatus"></span>
+      <div class="scopeCtl">
+        <label class="field"><span>Layout</span>
+          <select id="layoutSel">
+            <option value="separate">One trace per strip</option>
+            <option value="unit">Voltages and currents grouped</option>
+          </select>
+        </label>
+        <button class="btn" type="button" id="resetZoom">Reset zoom</button>
+      </div>
+    </div>
+    <div class="ctrlBar" id="ctrlBar">
+      <div class="ctrlGroup" id="alphaCtl" hidden>
+        <label class="ctrlLbl" for="alphaRange">Firing angle <span class="nt">α</span></label>
+        <div class="ctrlRow">
+          <input type="range" id="alphaRange" min="0" max="180" step="1" value="30">
+          <span class="ctrlVal" id="alphaVal">30°</span>
+        </div>
+        <div class="chips" id="alphaChips"></div>
+        <div class="ctrlNote" id="alphaMode"></div>
+      </div>
+      <div class="ctrlGroup" id="dutyCtl" hidden>
+        <label class="ctrlLbl" for="dutyRange">Duty cycle D</label>
+        <div class="ctrlRow">
+          <input type="range" id="dutyRange" min="0" max="100" step="1" value="50">
+          <span class="ctrlVal" id="dutyVal">50%</span>
+        </div>
+        <div class="chips" id="dutyChips"></div>
+      </div>
+      <div class="ctrlGroup">
+        <span class="ctrlLbl">Animate</span>
+        <div class="ctrlRow">
+          <button class="btn primary small" type="button" id="playBtn">Play</button>
+          <select id="speedSel" aria-label="Playback speed">
+            <option value="0.1">0.1×</option><option value="0.25">0.25×</option><option value="0.5" selected>0.5×</option><option value="1">1×</option><option value="2">2×</option>
+          </select>
+        </div>
+        <div class="ctrlRow">
+          <input type="range" id="scrub" min="0" max="1000" step="1" value="0" aria-label="Scrub through time">
+        </div>
+      </div>
+      <div class="ctrlGroup">
+        <span class="ctrlLbl">Display</span>
+        <label class="field"><span>X axis</span>
+          <select id="xMode"><option value="time">Time</option><option value="deg">Angle ωt (°)</option></select>
+        </label>
+        <label class="chk"><input type="checkbox" id="showLanes" checked> Gate pulses and conducting devices</label>
+      </div>
+    </div>
+    <div class="cursorRead" id="cursorRead"></div>
+    <div id="scopeMsg"></div>
+    <div class="plotWrap" id="plotWrap">
+      <canvas id="plotBase"></canvas>
+      <canvas id="plotOver"></canvas>
+    </div>
+    <div class="tableWrap"><table class="meas" id="measTable"></table></div>
+    <p class="tnote" id="tnote"></p>
+  </section>
+
+  <section class="analysis" id="analysis">
+    <div class="anHead">
+      <h2>Performance and theory</h2>
+      <span class="status" id="anWindow"></span>
+    </div>
+    <details class="anSetup">
+      <summary>Signals used for the calculations</summary>
+      <div class="anSel" id="anSel"></div>
+    </details>
+    <div id="anMsg"></div>
+    <div class="metrics" id="metrics"></div>
+    <div class="anGrid">
+      <div class="card" id="theoryCard"></div>
+      <div class="card">
+        <div class="cardHead"><h3 id="specTitle">Harmonic spectrum</h3><span class="status" id="specNote"></span></div>
+        <div class="specWrap"><canvas id="specCanvas"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cardHead"><h3>Conduction sequence</h3><span class="status" id="seqNote"></span></div>
+      <div class="tableWrap"><table class="meas seq" id="seqTable"></table></div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span>Power Electronics Assignment 2</span>
+    <span>Trishnika Sen · Roll No. 24EE10102</span>
+  </footer>
+
+  <div class="modal" id="guideModal" hidden>
+    <div class="modalBox guideBox" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+      <h2 id="guideTitle">Guide</h2>
+      <div class="guideBody" id="guideBody"></div>
+      <div class="pbtns"><button class="btn" type="button" id="guideClose">Close</button></div>
+    </div>
+  </div>
+
+  <div class="modal" id="jsonModal" hidden>
+    <div class="modalBox" role="dialog" aria-modal="true" aria-labelledby="jsonTitle">
+      <h2 id="jsonTitle">Save or load a circuit</h2>
+      <p class="pnote">Your circuit is kept in this browser automatically. To keep a copy elsewhere, copy the text below and paste it into a file. To open a saved circuit, paste its text here and choose Load.</p>
+      <textarea id="jsonText" spellcheck="false" aria-label="Circuit as text"></textarea>
+      <div class="perr" id="jsonErr"></div>
+      <div class="pbtns">
+        <button class="btn" type="button" id="jsonCopy">Copy</button>
+        <button class="btn primary" type="button" id="jsonLoad">Load this circuit</button>
+        <button class="btn" type="button" id="jsonClose">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>// ===================== Simulation engine =====================
+const GRID = 20, CLEN = 4, MAX_STEPS = 400000;
+const PRM = (k, label, unit, def, rule) => ({ k, label, unit, def, rule });
+const TYPES = {
+  VAC: { name: 'AC voltage source', prefix: 'V', pins: 2, src: true, params: [PRM('Vpk', 'Peak voltage', 'V', 325), PRM('f', 'Frequency', 'Hz', 50, 'pos'), PRM('phase', 'Phase', '°', 0), PRM('Rs', 'Series resistance', 'Ω', 0, 'nonneg')] },
+  VDC: { name: 'DC voltage source', prefix: 'V', pins: 2, src: true, params: [PRM('V', 'Voltage', 'V', 48), PRM('Rs', 'Series resistance', 'Ω', 0, 'nonneg')] },
+  R: { name: 'Resistor', prefix: 'R', pins: 2, params: [PRM('R', 'Resistance', 'Ω', 10, 'pos')] },
+  L: { name: 'Inductor', prefix: 'L', pins: 2, params: [PRM('L', 'Inductance', 'H', 0.01, 'pos')] },
+  C: { name: 'Capacitor', prefix: 'C', pins: 2, params: [PRM('C', 'Capacitance', 'F', 100e-6, 'pos'), PRM('V0', 'Initial voltage', 'V', 0)] },
+  D: { name: 'Diode', prefix: 'D', pins: 2, sw: true, params: [PRM('Vf', 'Forward drop', 'V', 0.7, 'nonneg'), PRM('Ron', 'On resistance', 'Ω', 0.01, 'pos')] },
+  SCR: { name: 'Thyristor (SCR)', prefix: 'T', pins: 2, sw: true, params: [PRM('alpha', 'Firing angle α', '°', 60, 'angle'), PRM('f', 'Line frequency', 'Hz', 50, 'pos'), PRM('offset', 'Phase offset', '°', 0), PRM('width', 'Gate pulse width', '°', 20, 'pos'), PRM('Vf', 'Forward drop', 'V', 0.7, 'nonneg'), PRM('Ron', 'On resistance', 'Ω', 0.01, 'pos')] },
+  TRIAC: { name: 'TRIAC', prefix: 'TR', pins: 2, sw: true, params: [PRM('alpha', 'Firing angle α', '°', 90, 'angle'), PRM('f', 'Line frequency', 'Hz', 50, 'pos'), PRM('width', 'Gate pulse width', '°', 20, 'pos'), PRM('Ron', 'On resistance', 'Ω', 0.01, 'pos')] },
+  SW: { name: 'Switch (MOSFET / IGBT)', prefix: 'S', pins: 2, sw: true, params: [PRM('f', 'Switching frequency', 'Hz', 20000, 'pos'), PRM('duty', 'Duty cycle', '%', 50, 'pct'), PRM('delay', 'Phase delay', '°', 0), PRM('Ron', 'On resistance', 'Ω', 0.01, 'pos')] },
+  VM: { name: 'Voltage probe', prefix: 'VM', pins: 2, params: [] },
+  GND: { name: 'Ground', prefix: 'GND', pins: 1, params: [] },
+};
+const DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+
+function pinsOf(c) {
+  const d = DIRS[((c.r % 4) + 4) % 4];
+  if (TYPES[c.type].pins === 1) return [[c.x, c.y]];
+  return [[c.x, c.y], [c.x + d[0] * CLEN, c.y + d[1] * CLEN]];
+}
+
+// ---------- number parsing / formatting ----------
+const SI = { T: 1e12, G: 1e9, M: 1e6, meg: 1e6, k: 1e3, K: 1e3, m: 1e-3, u: 1e-6, 'µ': 1e-6, 'μ': 1e-6, n: 1e-9, p: 1e-12, f: 1e-15 };
+function parseVal(s) {
+  if (typeof s === 'number') return s;
+  s = String(s).trim().replace(/,/g, '').replace(/−/g, '-');
+  const m = s.match(/^([-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)\s*(meg|MEG|Meg|[TGMkKmuµμnpf])?/);
+  if (!m) return NaN;
+  const rest = s.slice(m[0].length);
+  if (!/^\s*(ohms?|Ω|V|A|H|F|Hz|s|sec|%|°|deg|degrees?|W)?\s*$/i.test(rest)) return NaN;
+  let v = parseFloat(m[1]);
+  if (m[2]) v *= SI[m[2].toLowerCase() === 'meg' ? 'meg' : m[2]];
+  return v;
+}
+function trimNum(x, sig) {
+  let s = x.toPrecision(sig);
+  if (s.indexOf('e') >= 0) s = String(parseFloat(s));
+  if (s.indexOf('.') >= 0) s = s.replace(/0+$/, '').replace(/\.$/, '');
+  return s;
+}
+const PREF = [[1e9, 'G'], [1e6, 'M'], [1e3, 'k'], [1, ''], [1e-3, 'm'], [1e-6, 'µ'], [1e-9, 'n'], [1e-12, 'p'], [1e-15, 'f']];
+function fmtEng(v, sig = 4, zero = 1e-9) {
+  if (!isFinite(v)) return '—';
+  const a = Math.abs(v);
+  if (a < zero || a === 0) return '0';
+  for (const [f, p] of PREF) {
+    if (a >= f * 0.99995) {
+      return (v < 0 ? '−' : '') + trimNum(a / f, sig) + p;
+    }
+  }
+  return (v < 0 ? '−' : '') + trimNum(a / 1e-15, sig) + 'f';
+}
+function fmtQty(v, unit, sig = 4, zero = 1e-9) {
+  if (unit === '°' || unit === '%') return trimNum(v, 6).replace('-', '−') + unit;
+  if (!isFinite(v)) return '—';
+  const a = Math.abs(v);
+  if (a < zero || a === 0) return '0 ' + unit;
+  let f = 1e-15, p = 'f';
+  for (const [ff, pp] of PREF) { if (a >= ff * 0.99995) { f = ff; p = pp; break; } }
+  return (v < 0 ? '−' : '') + trimNum(a / f, sig) + ' ' + p + unit;
+}
+function fmtInput(v, unit) {
+  if (unit === '°' || unit === '%') return trimNum(v, 8);
+  return fmtEng(v, 6, 0).replace('−', '-');
+}
+
+// ---------- connectivity ----------
+function onInterior(px, py, w) {
+  const dx = w.x2 - w.x1, dy = w.y2 - w.y1;
+  const len2 = dx * dx + dy * dy;
+  if (len2 === 0) return false;
+  if (dx * (py - w.y1) - dy * (px - w.x1) !== 0) return false;
+  const dot = (px - w.x1) * dx + (py - w.y1) * dy;
+  return dot > 0 && dot < len2;
+}
+function analyze(circ) {
+  const idx = new Map(), parent = [], xy = [], count = new Map();
+  const key = (x, y) => x + ',' + y;
+  const add = (x, y) => { const k = key(x, y); let i = idx.get(k); if (i === undefined) { i = parent.length; idx.set(k, i); parent.push(i); xy.push([x, y]); } return i; };
+  const find = i => { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; } return i; };
+  const uni = (a, b) => { a = find(a); b = find(b); if (a !== b) parent[a] = b; };
+  const inc = (k, n = 1) => count.set(k, (count.get(k) || 0) + n);
+  for (const w of circ.wires) {
+    const a = add(w.x1, w.y1), b = add(w.x2, w.y2); uni(a, b);
+    inc(key(w.x1, w.y1)); inc(key(w.x2, w.y2));
+  }
+  for (const c of circ.comps) for (const [x, y] of pinsOf(c)) { add(x, y); inc(key(x, y)); }
+  const n = xy.length;
+  for (let i = 0; i < n; i++) {
+    const [px, py] = xy[i];
+    for (const w of circ.wires) {
+      if (onInterior(px, py, w)) { uni(i, idx.get(key(w.x1, w.y1))); inc(key(px, py), 2); }
+    }
+  }
+  return { idx, find, xy, count, key };
+}
+
+function buildNetlist(circ) {
+  const A = analyze(circ);
+  const gnds = circ.comps.filter(c => c.type === 'GND');
+  if (!gnds.length) return { error: 'Add a ground symbol. Every circuit needs one node marked as 0 V.' };
+  const nodeOfRoot = new Map();
+  for (const g of gnds) nodeOfRoot.set(A.find(A.idx.get(A.key(g.x, g.y))), 0);
+  let next = 1;
+  const nodeAt = (x, y) => {
+    const r = A.find(A.idx.get(A.key(x, y)));
+    if (!nodeOfRoot.has(r)) nodeOfRoot.set(r, next++);
+    return nodeOfRoot.get(r);
+  };
+  const map = new Map(), open = [];
+  for (const c of circ.comps) {
+    const pins = pinsOf(c);
+    map.set(c.id, pins.map(([x, y]) => nodeAt(x, y)));
+    for (const [x, y] of pins) if ((A.count.get(A.key(x, y)) || 0) < 2 && !open.includes(c.name)) open.push(c.name);
+  }
+  return { nodes: map, nNodes: next, open };
+}
+
+// ---------- dense LU ----------
+function luFactor(A, n) {
+  const piv = new Int32Array(n);
+  for (let k = 0; k < n; k++) {
+    let p = k, mx = Math.abs(A[k * n + k]);
+    for (let i = k + 1; i < n; i++) { const v = Math.abs(A[i * n + k]); if (v > mx) { mx = v; p = i; } }
+    if (!(mx > 1e-15)) return null;
+    piv[k] = p;
+    if (p !== k) for (let j = 0; j < n; j++) { const t = A[k * n + j]; A[k * n + j] = A[p * n + j]; A[p * n + j] = t; }
+    const akk = A[k * n + k];
+    for (let i = k + 1; i < n; i++) {
+      const f = A[i * n + k] / akk;
+      A[i * n + k] = f;
+      if (f !== 0) for (let j = k + 1; j < n; j++) A[i * n + j] -= f * A[k * n + j];
+    }
+  }
+  return piv;
+}
+function luSolve(LU, piv, b, n) {
+  for (let k = 0; k < n; k++) { const p = piv[k]; if (p !== k) { const t = b[k]; b[k] = b[p]; b[p] = t; } }
+  for (let i = 1; i < n; i++) { let s = b[i]; const r = i * n; for (let j = 0; j < i; j++) s -= LU[r + j] * b[j]; b[i] = s; }
+  for (let i = n - 1; i >= 0; i--) { let s = b[i]; const r = i * n; for (let j = i + 1; j < n; j++) s -= LU[r + j] * b[j]; b[i] = s / LU[r + i]; }
+}
+
+function checkParams(circ) {
+  for (const c of circ.comps) {
+    const T = TYPES[c.type];
+    if (!T) return `Unknown part type "${c.type}".`;
+    for (const p of T.params) {
+      const v = c.p[p.k];
+      if (typeof v !== 'number' || !isFinite(v)) return `${c.name}: ${p.label} is not a valid number.`;
+      if (p.rule === 'pos' && !(v > 0)) return `${c.name}: ${p.label} must be greater than zero.`;
+      if (p.rule === 'nonneg' && v < 0) return `${c.name}: ${p.label} cannot be negative.`;
+      if (p.rule === 'pct' && (v < 0 || v > 100)) return `${c.name}: ${p.label} must be between 0 and 100 %.`;
+      if (p.rule === 'angle' && (v < 0 || v > 180)) return `${c.name}: ${p.label} must be between 0° and 180°.`;
+    }
+  }
+  return null;
+}
+
+const GOFF = 1e-9, GMIN = 1e-12, VEPS = 1e-6, MAXIT = 40, IHOLD = 1e-4;
+
+function simulate(circ) {
+  const t0 = (typeof performance !== 'undefined' ? performance : Date).now();
+  const dt = +circ.sim.dt, tstop = +circ.sim.tstop;
+  if (!circ.comps.length) return { error: 'The schematic is empty. Pick parts from the left and click to place them, or load an example.' };
+  if (!(dt > 0)) return { error: 'The time step must be greater than zero.' };
+  if (!(tstop > dt)) return { error: 'The stop time must be longer than the time step.' };
+  const steps = Math.round(tstop / dt);
+  if (steps > MAX_STEPS) return { error: `That needs ${steps.toLocaleString('en-US')} time steps. Use a larger time step or a shorter stop time (limit ${MAX_STEPS.toLocaleString('en-US')}).` };
+  const perr = checkParams(circ); if (perr) return { error: perr };
+  const net = buildNetlist(circ); if (net.error) return net;
+  const N = net.nNodes - 1;
+  const elems = circ.comps.filter(c => c.type !== 'GND').map(c => {
+    const [a, b] = net.nodes.get(c.id);
+    return { c, type: c.type, a, b, p: c.p, on: false, gate: false, dir: 1, iPrev: 0, vPrev: c.type === 'C' ? c.p.V0 : 0, k: -1, iNow: 0, vNow: 0 };
+  });
+  const srcs = elems.filter(e => TYPES[e.type].src);
+  srcs.forEach((e, i) => e.k = i);
+  const size = N + srcs.length;
+  if (size === 0) return { error: 'Nothing to solve. Connect the parts to each other and to ground.' };
+  const warnings = [];
+  if (!srcs.length) warnings.push('There is no voltage source, so every waveform will be zero.');
+  if (net.open.length) warnings.push('Unconnected pins on: ' + net.open.join(', ') + '.');
+
+  const base = new Float64Array(size * size);
+  const stamp = (M, a, b, g) => {
+    if (a > 0) M[(a - 1) * size + a - 1] += g;
+    if (b > 0) M[(b - 1) * size + b - 1] += g;
+    if (a > 0 && b > 0) { M[(a - 1) * size + b - 1] -= g; M[(b - 1) * size + a - 1] -= g; }
+  };
+  for (let i = 0; i < N; i++) base[i * size + i] += GMIN;
+  const Ls = [], Cs = [], sws = [];
+  for (const e of elems) {
+    switch (e.type) {
+      case 'R': stamp(base, e.a, e.b, 1 / e.p.R); break;
+      case 'L': e.g = dt / e.p.L; stamp(base, e.a, e.b, e.g); Ls.push(e); break;
+      case 'C': e.g = e.p.C / dt; stamp(base, e.a, e.b, e.g); Cs.push(e); break;
+      case 'VAC': case 'VDC': {
+        const r = N + e.k;
+        if (e.a > 0) { base[(e.a - 1) * size + r] += 1; base[r * size + e.a - 1] += 1; }
+        if (e.b > 0) { base[(e.b - 1) * size + r] -= 1; base[r * size + e.b - 1] -= 1; }
+        base[r * size + r] -= e.p.Rs;
+        break;
+      }
+      case 'D': case 'SCR': case 'TRIAC': case 'SW':
+        e.gon = 1 / e.p.Ron; e.vf = (e.type === 'D' || e.type === 'SCR') ? e.p.Vf : 0; sws.push(e); break;
+    }
+  }
+  const cache = new Map();
+  const st = new Uint8Array(sws.length);
+  const getLU = () => {
+    for (let i = 0; i < sws.length; i++) st[i] = sws[i].on ? 1 : 0;
+    const key = st.join('');
+    let ent = cache.get(key);
+    if (ent) return ent;
+    const M = base.slice();
+    for (const e of sws) stamp(M, e.a, e.b, e.on ? e.gon : GOFF);
+    const piv = luFactor(M, size);
+    ent = piv ? { M, piv } : null;
+    if (cache.size > 512) cache.clear();
+    cache.set(key, ent);
+    return ent;
+  };
+  const TWO_PI = 2 * Math.PI;
+  const gateOf = (e, t) => {
+    const p = e.p;
+    if (e.type === 'SCR') { let ph = (360 * p.f * t - p.alpha - p.offset) % 360; if (ph < 0) ph += 360; return ph < p.width; }
+    if (e.type === 'TRIAC') { let ph = (360 * p.f * t - p.alpha) % 180; if (ph < 0) ph += 180; return ph < p.width && p.alpha + ph < 180; }
+    if (e.type === 'SW') { let ph = (p.f * t + p.delay / 360) % 1; if (ph < 0) ph += 1; return ph < p.duty / 100; }
+    return false;
+  };
+  const srcV = (e, t) => e.type === 'VAC' ? e.p.Vpk * Math.sin(TWO_PI * e.p.f * t + e.p.phase * Math.PI / 180) : e.p.V;
+
+  // outputs
+  const signals = [];
+  for (const c of circ.comps) {
+    if (c.type === 'GND') continue;
+    const e = elems.find(q => q.c === c);
+    if (c.plotV) signals.push({ name: 'V(' + c.name + ')', unit: 'V', compId: c.id, e, kind: 'V', data: new Float32Array(steps) });
+    if (c.plotI && c.type !== 'VM') signals.push({ name: 'I(' + c.name + ')', unit: 'A', compId: c.id, e, kind: 'I', data: new Float32Array(steps) });
+  }
+  const swStates = new Uint8Array(steps * sws.length);
+  const pAC = new Float32Array(steps), pDC = new Float32Array(steps);
+  const acSrcs = srcs.filter(e => e.type === 'VAC'), dcSrcs = srcs.filter(e => e.type === 'VDC');
+  const x = new Float64Array(size);
+  const vOf = e => (e.a > 0 ? x[e.a - 1] : 0) - (e.b > 0 ? x[e.b - 1] : 0);
+  let nonconv = 0, firstNonconv = -1;
+
+  const solve = (t) => {
+    const ent = getLU();
+    if (!ent) return false;
+    x.fill(0);
+    for (const e of srcs) x[N + e.k] = srcV(e, t);
+    for (const e of Ls) { if (e.a > 0) x[e.a - 1] -= e.iPrev; if (e.b > 0) x[e.b - 1] += e.iPrev; }
+    for (const e of Cs) { const g = e.g * e.vPrev; if (e.a > 0) x[e.a - 1] += g; if (e.b > 0) x[e.b - 1] -= g; }
+    for (const e of sws) if (e.on && e.vf > 0) { const g = e.gon * e.vf; if (e.a > 0) x[e.a - 1] += g; if (e.b > 0) x[e.b - 1] -= g; }
+    luSolve(ent.M, ent.piv, x, size);
+    return true;
+  };
+
+  for (let n = 0; n < steps; n++) {
+    const t = (n + 1) * dt;
+    for (const e of sws) { e.gate = gateOf(e, t); if (e.type === 'SW' && !e.gate) e.on = false; }
+    let iter = 0;
+    for (;;) {
+      if (!solve(t)) return { error: 'The circuit cannot be solved. Check for voltage sources connected directly in parallel, or a loop made only of voltage sources and wires.' };
+      let changed = false;
+      for (const e of sws) {
+        const v = vOf(e);
+        if (e.type === 'SW') {
+          if (e.on) { if (e.gon * v < 0) { e.on = false; changed = true; } }
+          else if (e.gate && v > VEPS) { e.on = true; changed = true; }
+        } else if (e.type === 'D') {
+          if (e.on) { if (e.gon * (v - e.vf) < 0) { e.on = false; changed = true; } }
+          else if (v > e.vf + VEPS) { e.on = true; changed = true; }
+        } else if (e.type === 'SCR') {
+          if (e.on) { const i = e.gon * (v - e.vf); if (i < 0 || (i < IHOLD && !e.gate)) { e.on = false; changed = true; } }
+          else if (e.gate && v > e.vf + VEPS) { e.on = true; changed = true; }
+        } else {
+          if (e.on) { const i = e.gon * v * e.dir; if (i < 0 || (i < IHOLD && !e.gate)) { e.on = false; changed = true; } }
+          else if (e.gate && Math.abs(v) > VEPS) { e.on = true; e.dir = v > 0 ? 1 : -1; changed = true; }
+        }
+      }
+      if (!changed) break;
+      if (++iter >= MAXIT) {
+        nonconv++; if (firstNonconv < 0) firstNonconv = t;
+        if (!solve(t)) return { error: 'The circuit cannot be solved.' };
+        break;
+      }
+    }
+    for (const e of elems) {
+      const v = vOf(e);
+      let i = 0;
+      switch (e.type) {
+        case 'R': i = v / e.p.R; break;
+        case 'L': i = e.g * v + e.iPrev; e.iPrev = i; break;
+        case 'C': i = e.g * (v - e.vPrev); e.vPrev = v; break;
+        case 'VAC': case 'VDC': i = -x[N + e.k]; break;
+        case 'D': case 'SCR': case 'TRIAC': case 'SW': i = e.on ? e.gon * (v - e.vf) : GOFF * v; break;
+      }
+      e.vNow = v; e.iNow = i;
+    }
+    for (const s of signals) s.data[n] = s.kind === 'V' ? s.e.vNow : s.e.iNow;
+    let pa = 0, pd = 0;
+    for (const e of acSrcs) pa += e.vNow * e.iNow;
+    for (const e of dcSrcs) pd += e.vNow * e.iNow;
+    pAC[n] = pa; pDC[n] = pd;
+    const o = n * sws.length;
+    for (let j = 0; j < sws.length; j++) { const e = sws[j]; swStates[o + j] = (e.on && Math.abs(e.iNow) > IHOLD ? 1 : 0) | (e.gate ? 2 : 0); }
+  }
+  if (nonconv) warnings.push(`Switch states did not settle at ${nonconv} time step(s), first near t = ${fmtQty(firstNonconv, 's')}. Try a smaller time step.`);
+  for (const s of signals) { delete s.e; }
+  return {
+    dt, steps, tstop: steps * dt, signals, warnings, pAC: acSrcs.length ? pAC : null, pDC: dcSrcs.length ? pDC : null, nAC: acSrcs.length,
+    sw: { ids: sws.map(e => e.c.id), names: sws.map(e => e.c.name), types: sws.map(e => e.type), states: swStates },
+    ms: (typeof performance !== 'undefined' ? performance : Date).now() - t0,
+  };
+}
+
+function statsOf(data, i0, i1) {
+  let s = 0, s2 = 0, mn = Infinity, mx = -Infinity;
+  for (let i = i0; i <= i1; i++) { const v = data[i]; s += v; s2 += v * v; if (v < mn) mn = v; if (v > mx) mx = v; }
+  const n = i1 - i0 + 1;
+  return n > 0 ? { avg: s / n, rms: Math.sqrt(s2 / n), min: mn, max: mx } : { avg: NaN, rms: NaN, min: NaN, max: NaN };
+}
+
+// ---------- examples ----------
+const DV = { Vf: 0.7, Ron: 0.01 };
+const SCRP = (alpha, offset, width = 20, Vf = 0.7) => ({ alpha, f: 50, offset, width, Vf, Ron: 0.01 });
+const AC = (phase = 0, Rs = 0) => ({ Vpk: 325.27, f: 50, phase, Rs });
+const AN = (vo, io, vs, is, theory) => ({ vo, io, vs, is, theory });
+// three-phase bridge layout shared by the diode and thyristor versions
+function bridge3(dev, names, params) {
+  const legs = [20, 26, 32];
+  const comps = [
+    ['VAC', 10, 5, 2, 'Va', AC(0), 'VI'], ['VAC', 10, 11, 2, 'Vb', AC(-120)], ['VAC', 10, 17, 2, 'Vc', AC(120)],
+    ['R', 40, 4, 1, 'R1', { R: 10 }], ['L', 40, 8, 1, 'L1', { L: 0.05 }, 'I'], ['VM', 44, 4, 1, 'VM1', {}, 'V'], ['GND', 6, 17, 1, 'GND1'],
+  ];
+  legs.forEach((x, k) => {
+    comps.push([dev, x, 8, 3, names[k][0], params[k][0]]);
+    comps.push([dev, x, 18, 3, names[k][1], params[k][1]]);
+  });
+  const wires = [[6, 5, 6, 17], [10, 5, 14, 5], [14, 5, 14, 9], [14, 9, 20, 9], [10, 11, 26, 11], [10, 17, 16, 17], [16, 17, 16, 13], [16, 13, 32, 13],
+    [20, 8, 20, 14], [26, 8, 26, 14], [32, 8, 32, 14], [20, 4, 44, 4], [20, 18, 44, 18], [40, 12, 40, 18], [44, 8, 44, 18]];
+  return { comps, wires };
+}
+function half3(dev, params, load) {
+  const comps = [['VAC', 4, 4, 1, 'Va', AC(0), 'VI'], ['VAC', 13, 4, 1, 'Vb', AC(-120)], ['VAC', 22, 4, 1, 'Vc', AC(120)], ['GND', 4, 8, 1, 'GND1']];
+  [4, 13, 22].forEach((x, k) => comps.push([dev, x, 4, 3, (dev === 'D' ? 'D' : 'T') + (k + 1), params[k]]));
+  const wires = [[4, 0, 35, 0], [4, 8, 35, 8], [35, 4, 35, 8]];
+  comps.push(['R', 31, 0, 1, 'R1', { R: 10 }, load ? '' : 'VI']);
+  if (load) comps.push(['L', 31, 4, 1, 'L1', { L: 0.1 }, 'I']); else wires.push([31, 4, 31, 8]);
+  comps.push(['VM', 35, 0, 1, 'VM1', {}, 'V']);
+  return { comps, wires };
+}
+const B1 = { wires: [[10, 8, 11, 8], [15, 8, 16, 8], [10, 4, 26, 4], [10, 12, 26, 12], [26, 8, 26, 12]] };
+
+const EXAMPLES = [
+  { id: 'hw-diode', group: 'Single-phase rectifiers', title: 'Diode half-wave · R load', sim: { tstop: 0.06, dt: 20e-6, tfrom: 0 },
+    comps: [['VAC', 4, 4, 1, 'V1', AC(), 'VI'], ['D', 6, 4, 0, 'D1', DV], ['R', 12, 4, 1, 'R1', { R: 100 }, 'VI'], ['GND', 4, 8, 1, 'GND1']],
+    wires: [[4, 4, 6, 4], [10, 4, 12, 4], [4, 8, 12, 8]], an: AN('V(R1)', 'I(R1)', 'V(V1)', 'I(V1)', 'hw-diode') },
+  { id: 'dbr-fw', group: 'Single-phase rectifiers', title: 'Diode full-wave bridge · R load', sim: { tstop: 0.06, dt: 20e-6, tfrom: 0 },
+    comps: [['VAC', 11, 8, 0, 'V1', AC(), 'VI'], ['D', 10, 8, 3, 'D1', DV, '', 1], ['D', 10, 12, 3, 'D4', DV, '', 1], ['D', 16, 8, 3, 'D3', DV], ['D', 16, 12, 3, 'D2', DV], ['R', 22, 4, 1, 'R1', { R: 20 }, 'VI'], ['GND', 10, 12, 1, 'GND1']],
+    wires: [[10, 8, 11, 8], [15, 8, 16, 8], [10, 4, 22, 4], [10, 12, 22, 12], [22, 8, 22, 12]], an: AN('V(R1)', 'I(R1)', 'V(V1)', 'I(V1)', 'fw-diode') },
+  { id: 'bridge-c', group: 'Single-phase rectifiers', title: 'Diode bridge · capacitor filter', sim: { tstop: 0.1, dt: 20e-6, tfrom: 0 },
+    comps: [['VAC', 11, 8, 0, 'V1', AC(0, 0.5), 'VI'], ['D', 10, 8, 3, 'D1', DV, '', 1], ['D', 10, 12, 3, 'D4', DV, '', 1], ['D', 16, 8, 3, 'D3', DV], ['D', 16, 12, 3, 'D2', DV], ['C', 22, 4, 1, 'C1', { C: 1000e-6, V0: 0 }], ['R', 26, 4, 1, 'R1', { R: 100 }, 'VI'], ['GND', 10, 12, 1, 'GND1']],
+    wires: [[10, 8, 11, 8], [15, 8, 16, 8], [10, 4, 26, 4], [10, 12, 26, 12], [22, 8, 22, 12], [26, 8, 26, 12]], an: AN('V(R1)', 'I(R1)', 'V(V1)', 'I(V1)', 'cap-filter') },
+  { id: 'hw-scr-rl', group: 'Single-phase rectifiers', title: 'Thyristor half-wave · RL load', sim: { tstop: 0.1, dt: 20e-6, tfrom: 0.04 },
+    comps: [['VAC', 4, 4, 1, 'V1', AC(), 'VI'], ['SCR', 6, 4, 0, 'T1', SCRP(60, 0)], ['R', 12, 4, 1, 'R1', { R: 10 }], ['L', 12, 8, 1, 'L1', { L: 0.05 }, 'I'], ['VM', 16, 4, 1, 'VM1', {}, 'V'], ['GND', 4, 12, 1, 'GND1']],
+    wires: [[4, 4, 6, 4], [10, 4, 16, 4], [16, 8, 16, 12], [4, 8, 4, 12], [4, 12, 16, 12]], an: AN('V(VM1)', 'I(L1)', 'V(V1)', 'I(V1)', 'hw-scr') },
+  { id: 'hw-fwd', group: 'Single-phase rectifiers', title: 'Thyristor half-wave · RL load + freewheeling diode', sim: { tstop: 0.1, dt: 20e-6, tfrom: 0.04 },
+    comps: [['VAC', 4, 4, 1, 'V1', AC(), 'VI'], ['SCR', 6, 4, 0, 'T1', SCRP(60, 0)], ['R', 12, 4, 1, 'R1', { R: 10 }], ['L', 12, 8, 1, 'L1', { L: 0.05 }, 'I'], ['D', 16, 12, 3, 'Dfw', DV, 'I'], ['VM', 22, 4, 1, 'VM1', {}, 'V'], ['GND', 4, 12, 1, 'GND1']],
+    wires: [[4, 4, 6, 4], [10, 4, 22, 4], [16, 8, 16, 4], [22, 8, 22, 12], [4, 8, 4, 12], [4, 12, 22, 12]], an: AN('V(VM1)', 'I(L1)', 'V(V1)', 'I(V1)', 'hw-scr-fwd') },
+  { id: 'bridge-scr', group: 'Single-phase rectifiers', title: 'Thyristor full-wave bridge · RL load', sim: { tstop: 0.2, dt: 20e-6, tfrom: 0.12 },
+    comps: [['VAC', 11, 8, 0, 'V1', AC(), 'VI'], ['SCR', 10, 8, 3, 'T1', SCRP(45, 0), '', 1], ['SCR', 10, 12, 3, 'T4', SCRP(45, 180), '', 1], ['SCR', 16, 8, 3, 'T3', SCRP(45, 180)], ['SCR', 16, 12, 3, 'T2', SCRP(45, 0)],
+      ['R', 22, 4, 1, 'R1', { R: 10 }], ['L', 22, 8, 1, 'L1', { L: 0.1 }, 'I'], ['VM', 26, 4, 1, 'VM1', {}, 'V'], ['GND', 10, 12, 1, 'GND1']],
+    wires: B1.wires, an: AN('V(VM1)', 'I(L1)', 'V(V1)', 'I(V1)', 'full-conv') },
+  { id: 'semi', group: 'Single-phase rectifiers', title: 'Semi-converter (2 thyristors + 2 diodes) · RL load', sim: { tstop: 0.2, dt: 20e-6, tfrom: 0.12 },
+    comps: [['VAC', 11, 8, 0, 'V1', AC(), 'VI'], ['SCR', 10, 8, 3, 'T1', SCRP(60, 0), '', 1], ['D', 10, 12, 3, 'D2', DV, '', 1], ['SCR', 16, 8, 3, 'T2', SCRP(60, 180)], ['D', 16, 12, 3, 'D1', DV],
+      ['R', 22, 4, 1, 'R1', { R: 10 }], ['L', 22, 8, 1, 'L1', { L: 0.1 }, 'I'], ['VM', 26, 4, 1, 'VM1', {}, 'V'], ['GND', 10, 12, 1, 'GND1']],
+    wires: B1.wires, an: AN('V(VM1)', 'I(L1)', 'V(V1)', 'I(V1)', 'semi') },
+  { id: 'rle', group: 'Single-phase rectifiers', title: 'Thyristor full-wave bridge · RLE load (motor)', sim: { tstop: 0.2, dt: 20e-6, tfrom: 0.12 },
+    comps: [['VAC', 11, 8, 0, 'V1', AC(), 'VI'], ['SCR', 10, 8, 3, 'T1', SCRP(45, 0), '', 1], ['SCR', 10, 12, 3, 'T4', SCRP(45, 180), '', 1], ['SCR', 16, 8, 3, 'T3', SCRP(45, 180)], ['SCR', 16, 12, 3, 'T2', SCRP(45, 0)],
+      ['R', 22, 4, 1, 'R1', { R: 5 }], ['L', 22, 8, 1, 'L1', { L: 0.05 }, 'I'], ['VDC', 22, 12, 1, 'E1', { V: 100, Rs: 0 }], ['VM', 26, 4, 1, 'VM1', {}, 'V'], ['GND', 10, 12, 1, 'GND1']],
+    wires: [[10, 8, 11, 8], [15, 8, 16, 8], [10, 4, 26, 4], [10, 12, 16, 12], [16, 12, 16, 16], [16, 16, 26, 16], [26, 8, 26, 16]], an: AN('V(VM1)', 'I(L1)', 'V(V1)', 'I(V1)', 'full-conv') },
+  Object.assign({ id: '3hw-diode', group: 'Three-phase rectifiers', title: 'Diode half-wave 3-phase (3-pulse) · R load', sim: { tstop: 0.1, dt: 20e-6, tfrom: 0.04 }, an: AN('V(VM1)', 'I(R1)', 'V(Va)', 'I(Va)', '3hw-diode') },
+    half3('D', [DV, DV, DV], false)),
+  Object.assign({ id: '3hw-scr', group: 'Three-phase rectifiers', title: 'Thyristor half-wave 3-phase · RL load', sim: { tstop: 0.12, dt: 20e-6, tfrom: 0.06 }, an: AN('V(VM1)', 'I(L1)', 'V(Va)', 'I(Va)', '3hw-scr') },
+    half3('SCR', [SCRP(30, 30), SCRP(30, 150), SCRP(30, 270)], true)),
+  Object.assign({ id: '3fw-diode', group: 'Three-phase rectifiers', title: 'Diode full-wave 3-phase bridge (6-pulse) · RL load', sim: { tstop: 0.1, dt: 20e-6, tfrom: 0.06 }, an: AN('V(VM1)', 'I(L1)', 'V(Va)', 'I(Va)', '3fw-diode') },
+    bridge3('D', [['D1', 'D4'], ['D3', 'D6'], ['D5', 'D2']], [[DV, DV], [DV, DV], [DV, DV]])),
+  Object.assign({ id: '3fw-scr', group: 'Three-phase rectifiers', title: 'Thyristor full-wave 3-phase bridge (6-pulse) · RL load', sim: { tstop: 0.1, dt: 20e-6, tfrom: 0.06 }, an: AN('V(VM1)', 'I(L1)', 'V(Va)', 'I(Va)', '3fw-scr') },
+    bridge3('SCR', [['T1', 'T4'], ['T3', 'T6'], ['T5', 'T2']], [[SCRP(30, 30, 70), SCRP(30, 210, 70)], [SCRP(30, 150, 70), SCRP(30, 330, 70)], [SCRP(30, 270, 70), SCRP(30, 90, 70)]])),
+  { id: 'triac', group: 'AC control and FACTS', title: 'AC voltage controller · TRIAC, R load', sim: { tstop: 0.06, dt: 20e-6, tfrom: 0 },
+    comps: [['VAC', 4, 4, 1, 'V1', AC(), 'VI'], ['TRIAC', 6, 4, 0, 'TR1', { alpha: 90, f: 50, width: 20, Ron: 0.01 }], ['R', 12, 4, 1, 'R1', { R: 50 }, 'VI'], ['GND', 4, 8, 1, 'GND1']],
+    wires: [[4, 4, 6, 4], [10, 4, 12, 4], [4, 8, 12, 8]], an: AN('V(R1)', 'I(R1)', 'V(V1)', 'I(V1)', 'triac') },
+  { id: 'tcr', group: 'AC control and FACTS', title: 'Thyristor-controlled reactor (TCR, static VAR)', sim: { tstop: 0.1, dt: 20e-6, tfrom: 0.04 },
+    comps: [['VAC', 4, 4, 1, 'V1', AC(), 'VI', 1], ['SCR', 6, 4, 0, 'T1', SCRP(120, 0, 20, 0)], ['SCR', 10, 7, 2, 'T2', SCRP(120, 180, 20, 0)], ['L', 14, 4, 1, 'L1', { L: 0.05 }, 'VI'], ['GND', 4, 12, 1, 'GND1']],
+    wires: [[4, 4, 6, 4], [6, 4, 6, 7], [10, 4, 10, 7], [10, 4, 14, 4], [14, 8, 14, 12], [4, 8, 4, 12], [4, 12, 14, 12]], an: AN('V(L1)', 'I(L1)', 'V(V1)', 'I(V1)', 'tcr') },
+  { id: 'buck', group: 'DC–DC converters', title: 'Buck converter · 48 V to 24 V', sim: { tstop: 0.005, dt: 0.25e-6, tfrom: 0 },
+    comps: [['VDC', 4, 4, 1, 'V1', { V: 48, Rs: 0 }, 'VI'], ['SW', 6, 4, 0, 'S1', { f: 20000, duty: 50, delay: 0, Ron: 0.01 }, 'I'], ['D', 10, 8, 3, 'D1', DV], ['L', 10, 4, 0, 'L1', { L: 200e-6 }, 'I'], ['C', 14, 4, 1, 'C1', { C: 100e-6, V0: 0 }], ['R', 20, 4, 1, 'R1', { R: 5 }, 'VI'], ['GND', 4, 8, 1, 'GND1']],
+    wires: [[4, 4, 6, 4], [14, 4, 20, 4], [4, 8, 20, 8]], an: AN('V(R1)', 'I(R1)', 'V(V1)', 'I(V1)', 'buck') },
+  { id: 'boost', group: 'DC–DC converters', title: 'Boost converter · 12 V to 24 V', sim: { tstop: 0.02, dt: 0.5e-6, tfrom: 0 },
+    comps: [['VDC', 4, 4, 1, 'V1', { V: 12, Rs: 0 }, 'VI'], ['L', 6, 4, 0, 'L1', { L: 100e-6 }, 'I'], ['SW', 10, 4, 1, 'S1', { f: 20000, duty: 50, delay: 0, Ron: 0.01 }], ['D', 10, 4, 0, 'D1', DV, 'I'], ['C', 18, 4, 1, 'C1', { C: 220e-6, V0: 0 }], ['R', 24, 4, 1, 'R1', { R: 20 }, 'VI'], ['GND', 4, 8, 1, 'GND1']],
+    wires: [[4, 4, 6, 4], [14, 4, 24, 4], [4, 8, 24, 8]], an: AN('V(R1)', 'I(R1)', 'V(V1)', 'I(V1)', 'boost') },
+  { id: 'inverter', group: 'Inverters', title: 'Full-bridge inverter · square wave, RL load', sim: { tstop: 0.1, dt: 10e-6, tfrom: 0.06 },
+    comps: [['VDC', 4, 8, 1, 'V1', { V: 100, Rs: 0 }, 'VI'],
+      ['SW', 12, 4, 1, 'S1', { f: 50, duty: 48, delay: 0, Ron: 0.01 }, 'I'], ['D', 10, 8, 3, 'D1', DV, 'I', 1],
+      ['SW', 12, 12, 1, 'S4', { f: 50, duty: 48, delay: 180, Ron: 0.01 }, 'V'], ['D', 10, 16, 3, 'D4', DV, '', 1],
+      ['SW', 24, 4, 1, 'S3', { f: 50, duty: 48, delay: 180, Ron: 0.01 }], ['D', 22, 8, 3, 'D3', DV, '', 1],
+      ['SW', 24, 12, 1, 'S2', { f: 50, duty: 48, delay: 0, Ron: 0.01 }], ['D', 22, 16, 3, 'D2', DV, '', 1],
+      ['R', 12, 10, 0, 'R1', { R: 10 }], ['L', 16, 10, 0, 'L1', { L: 0.02 }, 'I'], ['GND', 4, 16, 1, 'GND1']],
+    wires: [[4, 4, 24, 4], [4, 16, 24, 16], [4, 4, 4, 8], [4, 12, 4, 16], [12, 8, 12, 12], [10, 8, 12, 8], [10, 12, 12, 12], [24, 8, 24, 12], [22, 8, 24, 8], [22, 12, 24, 12], [20, 10, 24, 10]],
+    an: AN('', 'I(L1)', 'V(V1)', 'I(V1)', 'inverter') },
+];
+
+// ===================== Analysis: metrics, harmonics, theory =====================
+function baseFreq(circ) {
+  const ac = circ.comps.find(c => c.type === 'VAC');
+  if (ac) return { f: ac.p.f, kind: 'line', src: ac.name };
+  const sw = circ.comps.find(c => c.type === 'SW');
+  if (sw) return { f: sw.p.f, kind: 'switch', src: sw.name };
+  const th = circ.comps.find(c => c.type === 'SCR' || c.type === 'TRIAC');
+  if (th) return { f: th.p.f, kind: 'line', src: th.name };
+  return null;
+}
+// Whole cycles of the base frequency inside [tA, tB]; returns sample indices.
+function cycleWindow(res, f, tA, tB) {
+  const dt = res.dt, T = 1 / f;
+  tB = Math.min(tB, res.tstop);
+  const k1 = Math.floor(tB / T + 1e-9);
+  const k0 = Math.ceil(Math.max(0, tA) / T - 1e-9);
+  const n = k1 - k0;
+  if (n < 1 || T < dt * 8) return null;
+  const t0 = k0 * T, t1 = k1 * T;
+  const i0 = Math.max(0, Math.round(t0 / dt));
+  const i1 = Math.min(res.steps - 1, Math.round(t1 / dt) - 1);
+  if (i1 - i0 < 8) return null;
+  return { i0, i1, t0, t1, n, T };
+}
+function harmonicsOf(d, i0, i1, dt, f, H) {
+  const N = i1 - i0 + 1, out = [];
+  let dc = 0;
+  for (let i = i0; i <= i1; i++) dc += d[i];
+  dc /= N;
+  for (let h = 1; h <= H; h++) {
+    const w = 2 * Math.PI * h * f;
+    let re = 0, im = 0;
+    for (let i = i0; i <= i1; i++) { const th = w * (i + 1) * dt, v = d[i]; re += v * Math.cos(th); im += v * Math.sin(th); }
+    const a = 2 * Math.hypot(re, im) / N;
+    out.push({ h, amp: a, rms: a / Math.SQRT2, ph: Math.atan2(re, im) });
+  }
+  return { dc, list: out };
+}
+function meanRms(d, i0, i1) {
+  let s = 0, s2 = 0, mn = Infinity, mx = -Infinity;
+  for (let i = i0; i <= i1; i++) { const v = d[i]; s += v; s2 += v * v; if (v < mn) mn = v; if (v > mx) mx = v; }
+  const n = i1 - i0 + 1;
+  return { mean: s / n, rms: Math.sqrt(s2 / n), min: mn, max: mx };
+}
+function meanProd(a, b, i0, i1) { let s = 0; for (let i = i0; i <= i1; i++) s += a[i] * b[i]; return s / (i1 - i0 + 1); }
+
+function computeMetrics(res, an, f, kind, w) {
+  const get = n => { const s = n && res.signals.find(q => q.name === n); return s ? s.data : null; };
+  const vo = get(an.vo), io = get(an.io), vs = get(an.vs), is = get(an.is);
+  const { i0, i1 } = w, dt = res.dt;
+  const m = { have: { vo: !!vo, io: !!io, vs: !!vs, is: !!is } };
+  if (vo) {
+    const s = meanRms(vo, i0, i1);
+    Object.assign(m, { Vdc: s.mean, Vrms: s.rms, Vmin: s.min, Vmax: s.max, Vpp: s.max - s.min });
+    if (Math.abs(s.mean) > 1e-6 * Math.max(1, s.rms)) { m.FF = s.rms / Math.abs(s.mean); m.RF = Math.sqrt(Math.max(0, m.FF * m.FF - 1)); }
+    const hv = harmonicsOf(vo, i0, i1, dt, f, 12);
+    let best = null;
+    for (const q of hv.list) if (!best || q.amp > best.amp * 1.05) best = q;
+    if (best && best.amp > 1e-3 * Math.max(1, Math.abs(s.mean))) m.fRipple = best.h * f;
+    m.voH = hv;
+  }
+  if (io) {
+    const s = meanRms(io, i0, i1);
+    Object.assign(m, { Idc: s.mean, Irms: s.rms, Imin: s.min, Imax: s.max });
+    const thr = 0.005 * Math.max(Math.abs(s.max), Math.abs(s.min), 1e-9);
+    if (s.min < -thr && s.max > thr) {
+      // AC current: discontinuous only if it dwells at zero for part of the cycle
+      let z = 0; for (let i = i0; i <= i1; i++) if (Math.abs(io[i]) <= thr) z++;
+      m.ccm = z / (i1 - i0 + 1) < 0.01;
+    } else m.ccm = Math.min(Math.abs(s.min), Math.abs(s.max)) > thr && Math.sign(s.min) === Math.sign(s.max);
+    m.ioH = harmonicsOf(io, i0, i1, dt, f, 25);
+    m.Io1 = m.ioH.list[0].rms;
+  }
+  if (vo && io) {
+    m.Pdc = m.Vdc * m.Idc;
+    m.Pout = meanProd(vo, io, i0, i1);
+    if (m.Vrms * m.Irms > 1e-12) m.eta = m.Pdc / (m.Vrms * m.Irms);
+  }
+  if (vs && is) {
+    const sv = meanRms(vs, i0, i1), si = meanRms(is, i0, i1);
+    m.Pin = meanProd(vs, is, i0, i1);
+    m.Vsrms = sv.rms; m.Isrms = si.rms;
+    if (kind === 'line') {
+      const S = sv.rms * si.rms;
+      if (S > 1e-12) m.PF = m.Pin / S;
+      const hv = harmonicsOf(vs, i0, i1, dt, f, 1), hi = harmonicsOf(is, i0, i1, dt, f, 25);
+      m.isH = hi;
+      const I1 = hi.list[0].rms;
+      m.Is1 = I1;
+      const ac2 = Math.max(0, si.rms * si.rms - hi.dc * hi.dc - I1 * I1);
+      if (I1 > 1e-9) m.THD = Math.sqrt(ac2) / I1;
+      if (I1 > 1e-9) { const dphi = hv.list[0].ph - hi.list[0].ph; m.DPF = Math.cos(dphi); m.Q1 = hv.list[0].rms * I1 * Math.sin(dphi); }
+      m.phases = an.phases || 1;
+      if (si.rms > 1e-12) m.CDF = I1 / si.rms;
+    }
+    const pArr = kind === 'line' ? res.pAC : res.pDC;
+    if (pArr) { let s = 0; for (let i = i0; i <= i1; i++) s += pArr[i]; m.PinTot = s / (i1 - i0 + 1); }
+    else m.PinTot = m.Pin * (an.phases || 1);
+    if (kind === 'line' && res.nAC > 1 && m.Vsrms * m.Isrms > 1e-12) m.PF = m.PinTot / (res.nAC * m.Vsrms * m.Isrms);
+    const Sin = (kind === 'line' && res.nAC > 1 ? res.nAC : 1) * m.Vsrms * m.Isrms;
+    if (m.Pout !== undefined && Math.abs(m.PinTot) > 1e-9 && Math.abs(m.PinTot) > 0.02 * Sin) m.effIn = m.Pout / m.PinTot;
+  }
+  return m;
+}
+
+// Conduction intervals over the last whole cycle of the window
+function conductionTable(res, w) {
+  const n = res.sw.ids.length;
+  if (!n) return [];
+  const dt = res.dt, T = w.T;
+  const iEnd = w.i1, iStart = Math.max(w.i0, iEnd - Math.round(T / dt) + 1);
+  const tc0 = (iStart) * dt;
+  const keyAt = i => { const on = []; for (let j = 0; j < n; j++) if (res.sw.states[i * n + j] & 1) on.push(res.sw.names[j]); return on.join(' + '); };
+  const rows = [];
+  let cur = keyAt(iStart), startI = iStart;
+  for (let i = iStart + 1; i <= iEnd + 1; i++) {
+    const k = i <= iEnd ? keyAt(i) : null;
+    if (k !== cur) {
+      rows.push({ a: (startI * dt - tc0) / T * 360, b: (i * dt - tc0) / T * 360, devs: cur });
+      cur = k; startI = i;
+    }
+  }
+  const off = ((((iStart + 1) * dt) / T) % 1) * 360;
+  rows.forEach(r => { r.a += off; r.b += off; });
+  if (rows.length > 1 && rows[0].devs === rows[rows.length - 1].devs) {
+    const last = rows.pop(); rows[0].a = last.a; rows[0].b = rows[0].b + 360;
+  }
+  rows.forEach(r => { while (r.a >= 359.5) { r.a -= 360; r.b -= 360; } if (r.a < 0 && r.a > -0.5) r.a = 0; });
+  rows.sort((p, q) => p.a - q.a);
+  // drop momentary overlaps (commutation lasting a step or two), then merge neighbours that now match
+  const kept = rows.filter(r => r.b - r.a >= 1.5);
+  const out = [];
+  for (const r of kept) {
+    const last = out[out.length - 1];
+    if (last && last.devs === r.devs) last.b = r.b; else out.push(Object.assign({}, r));
+  }
+  return out;
+}
+
+// ---------- textbook formulas ----------
+const THEORIES = {
+  'hw-diode': '1-phase half-wave diode rectifier',
+  'fw-diode': '1-phase full-wave diode bridge',
+  'cap-filter': 'Diode bridge with capacitor filter',
+  'hw-scr': '1-phase half-wave thyristor rectifier',
+  'hw-scr-fwd': 'Half-wave thyristor with freewheeling diode',
+  'full-conv': '1-phase fully controlled bridge',
+  'semi': '1-phase semi-converter',
+  '3hw-diode': '3-phase half-wave diode (3-pulse)',
+  '3hw-scr': '3-phase half-wave thyristor (3-pulse)',
+  '3fw-diode': '3-phase diode bridge (6-pulse)',
+  '3fw-scr': '3-phase thyristor bridge (6-pulse)',
+  'triac': '1-phase AC voltage controller',
+  'tcr': 'Thyristor-controlled reactor (TCR)',
+  'buck': 'Buck converter',
+  'boost': 'Boost converter',
+  'inverter': 'Full-bridge square-wave inverter',
+};
+function circuitParams(circ) {
+  const first = t => circ.comps.find(c => c.type === t);
+  const ac = first('VAC'), th = circ.comps.find(c => c.type === 'SCR' || c.type === 'TRIAC'), sw = first('SW');
+  const dcs = circ.comps.filter(c => c.type === 'VDC');
+  return {
+    Vm: ac ? ac.p.Vpk : NaN, f: ac ? ac.p.f : (th ? th.p.f : NaN), acName: ac ? ac.name : '',
+    alpha: th ? th.p.alpha : 0, thName: th ? th.name : '', width: th && isFinite(th.p.width) ? th.p.width : 20,
+    Ron: (() => { const d = th || circ.comps.find(c => c.type === 'D'); return d && isFinite(d.p.Ron) ? d.p.Ron : 0; })(),
+    R: first('R') ? first('R').p.R : NaN, Rn: first('R') ? first('R').name : '',
+    L: first('L') ? first('L').p.L : 0, Ln: first('L') ? first('L').name : '',
+    C: first('C') ? first('C').p.C : NaN, Cn: first('C') ? first('C').name : '',
+    D: sw ? sw.p.duty / 100 : NaN, fsw: sw ? sw.p.f : NaN, swName: sw ? sw.name : '',
+    Vin: dcs.length ? dcs[0].p.V : NaN, Vin_n: dcs.length ? dcs[0].name : '',
+    E: ac && dcs.length ? dcs[0].p.V : 0, En: ac && dcs.length ? dcs[0].name : '',
+  };
+}
+const n2 = (v, d = 1) => (isFinite(v) ? (+v).toFixed(d) : '—');
+const DEG = Math.PI / 180;
+// ---------- ideal-device analytical model ----------
+// Each "path" is one way the load can be connected to the source: while path k conducts the load sees
+// v_k(θ) = A·sin(θ + ψ). Between switching events the RL(E) load current has the closed-form solution
+//   i(θ) = (A/Z)·sin(θ + ψ − φ) − E/R + [i0 − ip(θ0)]·e^(−(θ − θ0)·R/X),
+// so the model is exact apart from locating events on a 0.05° grid (extinction angles are refined by bisection).
+function idealModel(cfg) {
+  const { paths, R, X, E, ac } = cfg;
+  if (!(R > 0) && !(X > 0)) return null;
+  const TWO_PI = 2 * Math.PI, N = 7200, d = TWO_PI / N;
+  const Z = Math.hypot(R, X), phi = Math.atan2(X, R);
+  const vOf = (p, th) => p.A * Math.sin(th + p.psi);
+  const curr = (p, th0, i0, th) => {
+    if (!(X > 0)) return (vOf(p, th) - (p.s > 0 ? E : 0)) / R;
+    const Ee = p.s > 0 ? E : 0;
+    if (!(R > 0)) return i0 + (p.A / X) * (Math.cos(th0 + p.psi) - Math.cos(th + p.psi)) - Ee * (th - th0) / X;
+    const ip = t => (p.A / Z) * Math.sin(t + p.psi - phi) - Ee / R;
+    return ip(th) + (i0 - ip(th0)) * Math.exp(-(th - th0) * R / X);
+  };
+  const gateOn = (p, th, width) => {
+    if (p.always) return true;
+    let ph = (th - p.gs) % TWO_PI; if (ph < 0) ph += TWO_PI;
+    return ph < width - 1e-9;
+  };
+  const forward = (p, th) => p.s * (vOf(p, th) - (p.s > 0 ? E : 0)) > 1e-9;
+  let k = -1, th0 = 0, i0 = 0, iPrev = 0, prevCycle = null, cyc = null, result = null;
+  const newCycle = () => ({ sv: 0, sv2: 0, si: 0, si2: 0, ic: 0, is: 0, events: [], used: new Set(), maxAbsI: 0 });
+  cyc = newCycle();
+  const vo = th => (k >= 0 ? vOf(paths[k], th) : (ac ? 0 : E));
+  let lastV = vo(0), lastI = 0;
+  for (let c = 0; c < 120; c++) {
+    for (let n = 1; n <= N; n++) {
+      const th = c * TWO_PI + n * d;
+      let i = 0;
+      if (k >= 0) {
+        i = curr(paths[k], th0, i0, th);
+        if (paths[k].s * i <= 0) {
+          // extinction: refine by bisection
+          let lo = th - d, hi = th;
+          for (let b = 0; b < 40; b++) { const mid = (lo + hi) / 2; if (paths[k].s * curr(paths[k], th0, i0, mid) > 0) lo = mid; else hi = mid; }
+          cyc.events.push({ type: 'off', path: k, th: (lo + hi) / 2 - c * TWO_PI });
+          k = -1; i = 0;
+        }
+      }
+      // firing or commutation at this grid point
+      let best = -1, bestV = -Infinity;
+      for (let j = 0; j < paths.length; j++) {
+        const p = paths[j];
+        if (j === k) continue;
+        if (k < 0) {
+          if (!gateOn(p, th, p.gr) || !forward(p, th)) continue;
+          const sv = p.s * vOf(p, th);
+          if (sv > bestV) { bestV = sv; best = j; }
+        } else {
+          const q = paths[k];
+          if (p.s !== q.s || !gateOn(p, th, p.gw)) continue;
+          const sv = p.s * vOf(p, th);
+          if (sv > q.s * vOf(q, th) + 1e-9 && sv > bestV) { bestV = sv; best = j; }
+        }
+      }
+      if (best >= 0) {
+        cyc.events.push({ type: 'on', path: best, th: th - c * TWO_PI });
+        if (k < 0) i = 0;
+        k = best; th0 = th; i0 = i;
+      }
+      const v = vo(th);
+      cyc.sv += (v + lastV) / 2; cyc.sv2 += (v * v + lastV * lastV) / 2;
+      cyc.si += (i + lastI) / 2; cyc.si2 += (i * i + lastI * lastI) / 2;
+      cyc.ic += i * Math.cos(th); cyc.is += i * Math.sin(th);
+      cyc.maxAbsI = Math.max(cyc.maxAbsI, Math.abs(i));
+      if (k >= 0) cyc.used.add(k);
+      lastV = v; lastI = i; iPrev = i;
+    }
+    const scale = Math.max(1e-9, Math.abs(cyc.si / N), cyc.maxAbsI);
+    if (prevCycle && Math.abs(prevCycle.endI - iPrev) <= 1e-7 * scale && prevCycle.endK === k &&
+        Math.abs(prevCycle.si - cyc.si) <= 1e-6 * scale * N && Math.abs(prevCycle.sv - cyc.sv) <= 1e-6 * N * (Math.abs(cyc.sv / N) + 1)) { result = cyc; break; }
+    prevCycle = Object.assign(cyc, { endI: iPrev, endK: k });
+    cyc = newCycle();
+  }
+  const res = result || prevCycle;
+  const Vavg = res.sv / N, Iavg = res.si / N;
+  return {
+    Vdc: Vavg, Vrms: Math.sqrt(Math.max(0, res.sv2 / N)), Idc: Iavg, Irms: Math.sqrt(Math.max(0, res.si2 / N)),
+    I1: Math.hypot(res.ic, res.is) * 2 / N / Math.SQRT2, events: res.events, used: [...res.used], maxI: res.maxAbsI,
+    conducts: res.maxAbsI > 1e-9,
+  };
+}
+function firstOnOff(model, pathIdx) {
+  const on = model.events.find(e => e.type === 'on' && e.path === pathIdx);
+  if (!on) return null;
+  const after = model.events.filter(e => e.th > on.th);
+  let off = after.find(e => e.type === 'off' && e.path === pathIdx);
+  let offTh = off ? off.th : null;
+  if (offTh === null) { // switched off after the cycle boundary: the cycle is periodic, so look before the turn-on
+    const w = model.events.find(e => e.type === 'off' && e.path === pathIdx && e.th < on.th);
+    if (w) offTh = w.th + 2 * Math.PI;
+  }
+  const next = after.find(e => e.type === 'on' && e.path !== pathIdx);
+  return { on: on.th, off: offTh, next: next ? next.th : null };
+}
+// topology descriptions for the analytical model, built from the circuit's own values
+function topology(key, P) {
+  const a = P.alpha * DEG, w = Math.max(0, P.width) * DEG, Vm = P.Vm, sq3 = Math.sqrt(3);
+  const always = { always: true, gs: 0, gw: 2 * Math.PI, gr: 2 * Math.PI };
+  const gated = (gs, gw, gr) => ({ always: false, gs, gw, gr: gr === undefined ? gw : gr });
+  const diode = /diode/.test(key);
+  const g = (gs, gw, gr) => (diode ? always : gated(gs, gw, gr));
+  switch (key) {
+    case 'hw-diode': case 'hw-scr':
+      return { p: 1, A: Vm, paths: [Object.assign({ A: Vm, psi: 0, s: 1 }, g(a, w))] };
+    case 'hw-scr-fwd':
+      return { p: 1, A: Vm, fw: true, paths: [Object.assign({ A: Vm, psi: 0, s: 1 }, gated(a, w)), Object.assign({ A: 0, psi: 0, s: 1 }, always)] };
+    case 'fw-diode': case 'full-conv':
+      return { p: 2, A: Vm, paths: [Object.assign({ A: Vm, psi: 0, s: 1 }, g(a, w)), Object.assign({ A: Vm, psi: Math.PI, s: 1 }, g(a + Math.PI, w))] };
+    case 'semi':
+      return { p: 2, A: Vm, fw: true, paths: [Object.assign({ A: Vm, psi: 0, s: 1 }, gated(a, w)), Object.assign({ A: Vm, psi: Math.PI, s: 1 }, gated(a + Math.PI, w)), Object.assign({ A: 0, psi: 0, s: 1 }, always)] };
+    case '3hw-diode': case '3hw-scr':
+      return { p: 3, A: Vm, paths: [0, 1, 2].map(k => Object.assign({ A: Vm, psi: -2 * Math.PI / 3 * k, s: 1 }, g(a + Math.PI / 6 + 2 * Math.PI / 3 * k, w))) };
+    case '3fw-diode': case '3fw-scr':
+      // pair k (T1T6, T1T2, T3T2, …) sees v = √3·Vm·sin(θ + 30° − 60°k); restarting from zero current needs both
+      // thyristors of the pair gated, which only overlaps for (width − 60°)
+      return { p: 6, A: sq3 * Vm, paths: [0, 1, 2, 3, 4, 5].map(k => Object.assign({ A: sq3 * Vm, psi: Math.PI / 6 - Math.PI / 3 * k, s: 1 }, g(a + Math.PI / 6 + Math.PI / 3 * k, w, Math.max(0, w - Math.PI / 3)))) };
+    case 'triac': {
+      const wt = Math.max(0, Math.min(w, Math.PI - a));
+      return { p: 2, A: Vm, ac: true, paths: [Object.assign({ A: Vm, psi: 0, s: 1 }, gated(a, wt)), Object.assign({ A: Vm, psi: 0, s: -1 }, gated(a + Math.PI, wt))] };
+    }
+    case 'tcr':
+      return { p: 2, A: Vm, ac: true, paths: [Object.assign({ A: Vm, psi: 0, s: 1 }, gated(a, w)), Object.assign({ A: Vm, psi: 0, s: -1 }, gated(a + Math.PI, w))] };
+  }
+  return null;
+}
+function runModel(key, P) {
+  const top = topology(key, P);
+  if (!top || !isFinite(P.Vm)) return null;
+  // devices in series with the load add their on-resistance (two per conduction path in bridges)
+  const nSer = /^(fw-diode|full-conv|semi|3fw-)/.test(key) ? 2 : 1;
+  const R = (isFinite(P.R) ? P.R : 0) + nSer * (P.Ron || 0), X = 2 * Math.PI * P.f * (P.L || 0);
+  const E = top.ac ? 0 : (P.E || 0);
+  const model = idealModel({ paths: top.paths, R, X, E, ac: !!top.ac });
+  if (!model) return null;
+  return Object.assign(model, { top, R, X, E });
+}
+function rectifierTheory(T, key, P, cmp) {
+  const M = runModel(key, P);
+  const sq3 = Math.sqrt(3), Vm = P.Vm, a = P.alpha * DEG, A = `${n2(P.alpha, 0)}°`;
+  const diode = /diode/.test(key);
+  const ccmV = {
+    'hw-diode': Vm / Math.PI, 'fw-diode': 2 * Vm / Math.PI, 'full-conv': 2 * Vm * Math.cos(a) / Math.PI,
+    '3hw-diode': 3 * sq3 * Vm / (2 * Math.PI), '3hw-scr': 3 * sq3 * Vm * Math.cos(a) / (2 * Math.PI),
+    '3fw-diode': 3 * sq3 * Vm / Math.PI, '3fw-scr': 3 * sq3 * Vm * Math.cos(a) / Math.PI,
+  }[key];
+  const ccmEq = {
+    'hw-diode': 'Vdc = Vm / π   (R load)', 'fw-diode': 'Vdc = 2·Vm / π', 'full-conv': 'Vdc = 2·Vm·cos α / π   (continuous current)',
+    '3hw-diode': 'Vdc = 3√3·Vm / (2π) ≈ 0.827·Vm', '3hw-scr': 'Vdc = 3√3·Vm·cos α / (2π)   (continuous current, α from the natural commutation point)',
+    '3fw-diode': 'Vdc = 3√3·Vm / π ≈ 1.35·VLL,rms', '3fw-scr': 'Vdc = 3√3·Vm·cos α / π ≈ 1.35·VLL,rms·cos α   (continuous current)',
+  }[key];
+  const ccmStep = {
+    'hw-diode': `Vdc = ${n2(Vm)} / π = ${n2(ccmV)} V`, 'fw-diode': `Vdc = 2 × ${n2(Vm)} / π = ${n2(ccmV)} V`,
+    'full-conv': `Vdc = 2 × ${n2(Vm)} × cos ${A} / π = ${n2(ccmV)} V`,
+    '3hw-diode': `Vdc = 3√3 × ${n2(Vm)} / 2π = ${n2(ccmV)} V`, '3hw-scr': `Vdc = 3√3 × ${n2(Vm)} × cos ${A} / 2π = ${n2(ccmV)} V`,
+    '3fw-diode': `Vdc = 3√3 × ${n2(Vm)} / π = ${n2(ccmV)} V`, '3fw-scr': `Vdc = 3√3 × ${n2(Vm)} × cos ${A} / π = ${n2(ccmV)} V`,
+  }[key];
+  if (ccmEq) T.eq.push(ccmEq);
+  if (!M) { // no usable load values: fall back to the textbook formula
+    if (ccmStep) T.steps.push(ccmStep);
+    cmp('Average output voltage', ccmV, 'V', 'Vdc'); T.cmp.scale = Vm; return;
+  }
+  const p = M.top.p, Ap = M.top.A, Eterm = M.E;
+  const loadTxt = `R = ${n2(M.R, 2)} Ω (including device on-resistance), ωL = ${n2(M.X, 2)} Ω${Eterm ? `, E = ${n2(Eterm)} V` : ''}`;
+  if (!M.conducts) {
+    T.mode = 'none';
+    T.steps.push(`Load: ${loadTxt}`, `At α = ${A} no ${diode ? 'diode' : 'thyristor'} is forward-biased while its gate pulse is present, so no current flows.`, `Vdc = ${Eterm ? 'E = ' + n2(Eterm) : '0'} V`);
+    T.instant = 'No conduction: the output stays at ' + (Eterm ? 'the load EMF E.' : '0 V.');
+    cmp('Average output voltage', Eterm, 'V', 'Vdc'); T.cmp.scale = Ap; return;
+  }
+  const pick = M.used.includes(0) ? 0 : (M.used.find(k => M.top.paths[k].A > 0) ?? 0);
+  const iv = firstOnOff(M, pick);
+  const ccm = M.events.filter(e => e.type === 'off').length === 0;
+  T.mode = ccm ? 'ccm' : 'dcm';
+  T.steps.push(`Load: ${loadTxt}`);
+  if (M.top.fw) {
+    // semi-converter and freewheeling-diode circuits: the textbook formula holds in both conduction modes
+    const fwV = key === 'semi' ? Vm * (1 + Math.cos(a)) / Math.PI : Vm * (1 + Math.cos(a)) / (2 * Math.PI);
+    T.eq.push(key === 'semi' ? 'Vdc = Vm·(1 + cos α) / π' : 'Vdc = Vm·(1 + cos α) / (2π)');
+    T.steps.push(`${key === 'semi' ? `Vdc = ${n2(Vm)} × (1 + cos ${A}) / π` : `Vdc = ${n2(Vm)} × (1 + cos ${A}) / 2π`} = ${n2(fwV)} V`);
+    T.steps.push(`Analytical solution of the RL load: Vdc = ${n2(M.Vdc)} V (${ccm ? 'continuous' : 'discontinuous'} current)`);
+    cmp('Average output voltage', M.Vdc, 'V', 'Vdc'); T.cmp.scale = Ap; return;
+  }
+  if (ccm) {
+    T.steps.push(`The load current never falls to zero, so conduction is continuous.`);
+    if (ccmStep) T.steps.push(ccmStep);
+    if (Eterm && M.R > 0) T.steps.push(`Idc = (Vdc − E) / R = (${n2(ccmV)} − ${n2(Eterm)}) / ${n2(M.R, 2)} = ${n2((ccmV - Eterm) / M.R, 2)} A`);
+    cmp('Average output voltage', M.Vdc, 'V', 'Vdc'); T.cmp.scale = Ap; return;
+  }
+  // discontinuous conduction: Vdc = (p/2π)·[∫θ1→θ2 v dθ + E·(2π/p − (θ2 − θ1))]
+  const pth = M.top.paths[pick];
+  const t1 = iv ? iv.on : a, t2 = iv && iv.off !== null ? iv.off : t1;
+  const integ = Ap * (Math.cos(t1 + pth.psi) - Math.cos(t2 + pth.psi));
+  const offInt = Math.max(0, 2 * Math.PI / p - (t2 - t1));
+  const Vd = p / (2 * Math.PI) * (integ + Eterm * offInt);
+  const d1 = (t1 / DEG) % 360, d2 = d1 + (t2 - t1) / DEG;
+  const m360 = x => ((x % 360) + 360) % 360;
+  const pTxt = p === 1 ? '1/(2π)' : p === 2 ? '1/π' : `${p}/(2π)`;
+  T.eq.push(`Vdc = ${pTxt}·[∫ v dωt over the conduction interval${Eterm ? ' + E × (off interval)' : ''}]   (discontinuous current)`);
+  T.steps.push(`The current falls to zero at β = ${n2(d2, 1)}°, before the next ${diode ? 'diode' : 'thyristor'} takes over, so conduction is discontinuous.`);
+  T.steps.push(`Conduction ${n2(d1, 1)}° → ${n2(d2, 1)}° (${n2(d2 - d1, 1)}° of every ${n2(360 / p, 0)}°)${Eterm ? `, vo = E for the remaining ${n2(offInt / DEG, 1)}°` : ', vo = 0 for the rest'}`);
+  T.steps.push(`Vdc = ${pTxt} × [${n2(Ap)} × (cos ${n2(m360(d1 + pth.psi / DEG), 1)}° − cos ${n2(m360(d2 + pth.psi / DEG), 1)}°)${Eterm ? ` + ${n2(Eterm)} × ${n2(offInt, 3)}` : ''}] = ${n2(Vd)} V`);
+  if (isFinite(ccmV)) T.notes.push(`The continuous-current formula would give ${n2(ccmV)} V, which does not apply here.`);
+  cmp('Average output voltage', M.Vdc, 'V', 'Vdc'); T.cmp.scale = Ap; T.cmp.formulaV = Vd;
+}
+function theory(key, circ, m) {
+  const P = circuitParams(circ);
+  const a = P.alpha * Math.PI / 180, Vm = P.Vm, w = 2 * Math.PI * P.f;
+  const deg = '°';
+  const T = { title: THEORIES[key] || '', eq: [], steps: [], instant: '', cmp: null, notes: [], mode: '' };
+  const A = `${n2(P.alpha, 0)}${deg}`;
+  const cmp = (label, value, unit, simKey, simLabel) => { T.cmp = { label, value, unit, simKey, simLabel: simLabel || label }; };
+  switch (key) {
+    case 'hw-diode': case 'fw-diode': case 'full-conv': case '3hw-diode': case '3hw-scr': case '3fw-diode': case '3fw-scr':
+    case 'hw-scr': case 'hw-scr-fwd': case 'semi': {
+      if (key === 'hw-scr' || key === 'hw-diode') {
+        T.eq.push(key === 'hw-scr' ? 'Vdc = Vm·(cos α − cos β) / (2π),   β = extinction angle (β = π for an R load)' : 'Vdc = Vm·(1 − cos β) / (2π),   β = extinction angle (β = π for an R load)');
+        const M = runModel(key, P);
+        if (!M) { cmp('Average output voltage', Vm / Math.PI, 'V', 'Vdc'); break; }
+        T.steps.push(`Load: R = ${n2(M.R, 2)} Ω, ωL = ${n2(M.X, 2)} Ω${M.X > 0 && M.R > 0 ? `, φ = tan⁻¹(ωL/R) = ${n2(Math.atan2(M.X, M.R) / DEG)}°` : ''}`);
+        if (!M.conducts) { T.mode = 'none'; T.steps.push(`No current flows at α = ${A}.`, 'Vdc = 0 V'); cmp('Average output voltage', 0, 'V', 'Vdc'); T.cmp.scale = Vm; break; }
+        const iv = firstOnOff(M, 0), t1 = iv.on, t2 = iv.off === null ? t1 + 2 * Math.PI : iv.off;
+        const V = Vm * (Math.cos(t1) - Math.cos(t2)) / (2 * Math.PI);
+        T.mode = 'dcm';
+        T.steps.push(`${key === 'hw-scr' ? 'T1 fires' : 'D1 starts conducting'} at ${n2(t1 / DEG, 1)}° and its current falls to zero at β = ${n2(t2 / DEG, 1)}°${M.X > 0 ? ' (solved from the RL current equation)' : ''}`);
+        T.steps.push(`Vdc = ${n2(Vm)} × (cos ${n2(t1 / DEG, 1)}° − cos ${n2(t2 / DEG, 1)}°) / 2π = ${n2(V)} V`);
+        T.instant = `vo(ωt) = Vm·sin ωt for ${n2(t1 / DEG, 0)}° ≤ ωt ≤ ${n2(t2 / DEG, 0)}°, and 0 elsewhere.${M.X > 0 ? ' The load inductance keeps the device on past 180°.' : ''}`;
+        if (key === 'hw-diode') T.notes.push('Ideal diode. The simulation includes the diode forward drop, so it reads slightly lower.');
+        cmp('Average output voltage', M.Vdc, 'V', 'Vdc'); T.cmp.scale = Vm; T.cmp.formulaV = V; break;
+      }
+      rectifierTheory(T, key, P, cmp);
+      const inst = {
+        'fw-diode': 'vo(ωt) = |Vm·sin ωt|. Two diodes conduct in each half-cycle.',
+        'full-conv': 'vo(ωt) = +vs while T1, T2 conduct and −vs while T3, T4 conduct. With discontinuous current vo = E (0 V for a passive load) when no thyristor conducts.',
+        'semi': 'vo = |vs| from α to π in each half-cycle. In between, a thyristor and diode on the same leg freewheel the load current and vo ≈ 0.',
+        'hw-scr-fwd': 'vo = vs while T1 conducts (α to π). After π the freewheeling diode clamps vo to about 0 V and carries the load current.',
+        '3hw-diode': 'vo follows the most positive phase voltage. Each diode conducts for 120°. Ripple at 3f.',
+        '3hw-scr': 'Each thyristor takes over 120° after the previous one, delayed by α from the natural commutation point.',
+        '3fw-diode': 'vo follows the largest line-to-line voltage: six 60° segments per cycle. Ripple at 6f.',
+        '3fw-scr': 'Thyristors fire in the order T1…T6, 60° apart. In continuous conduction each conducts for 120°, two at a time.',
+      }[key];
+      if (inst && !T.instant) T.instant = inst;
+      if ((key === 'fw-diode' || key === '3fw-diode') && T.mode !== 'none') T.notes.push('Two diode drops are in the current path, so the simulation reads about 1.4 V lower.');
+      if ((key === 'full-conv' || key === '3fw-scr' || key === '3hw-scr') && P.alpha > 90 && !P.E) T.notes.push('Above 90° a passive load cannot make the average voltage negative. Inversion needs a DC source in the load (RLE).');
+      break;
+    }
+    case 'cap-filter': {
+      const Vpp = Vm / (2 * P.f * P.R * P.C);
+      T.eq.push('ΔV ≈ Vm / (2·f·R·C)', 'Vdc ≈ Vm − ΔV / 2');
+      T.steps.push(`ΔV ≈ ${n2(Vm)} / (2 × ${n2(P.f, 0)} × ${n2(P.R, 1)} × ${(P.C * 1e6).toFixed(0)} µF) = ${n2(Vpp)} V`, `Vdc ≈ ${n2(Vm)} − ${n2(Vpp / 2)} = ${n2(Vm - Vpp / 2)} V`);
+      T.instant = 'The capacitor charges near each voltage peak and discharges into R in between.';
+      T.notes.push('Approximation for small ripple. Diode drops and source resistance lower the simulated value.');
+      cmp('Average output voltage', Vm - Vpp / 2, 'V', 'Vdc'); T.cmp.scale = Vm; T.cmp.loose = true; break;
+    }
+    case 'triac': {
+      const Vs = Vm / Math.SQRT2;
+      T.eq.push('Vo,rms = Vs·√[(π − α + sin 2α / 2) / π]   (R load)', 'With inductance: Vo,rms = Vm·√[(β − α − (sin 2β − sin 2α)/2) / (2π)],  β = extinction angle');
+      const M = runModel('triac', P);
+      if (!M) { cmp('RMS output voltage', NaN, 'V', 'Vrms'); break; }
+      const iv = firstOnOff(M, 0);
+      if (!M.conducts || !iv) {
+        T.mode = 'none';
+        T.steps.push(`At α = ${A} the gate pulse ends at the zero crossing before the TRIAC is forward-biased, so it does not conduct.`, 'Vo,rms = 0 V');
+        cmp('RMS output voltage', 0, 'V', 'Vrms'); T.cmp.scale = Vs; break;
+      }
+      const t1 = iv.on, t2 = iv.off === null ? t1 + Math.PI : iv.off;
+      const cont = iv.off === null || t2 - t1 >= Math.PI - 1e-6;
+      const Vo = cont ? Vs : Vm * Math.sqrt(Math.max(0, (t2 - t1 - (Math.sin(2 * t2) - Math.sin(2 * t1)) / 2) / (2 * Math.PI)));
+      T.mode = cont ? 'ccm' : 'dcm';
+      T.steps.push(`Load: R = ${n2(M.R, 2)} Ω, ωL = ${n2(M.X, 2)} Ω`);
+      if (cont) T.steps.push(`α is below the load angle, so the TRIAC conducts the whole cycle and Vo,rms = Vs = ${n2(Vs)} V`);
+      else {
+        T.steps.push(`Each half-cycle conducts from ${n2(t1 / DEG, 1)}° to β = ${n2(t2 / DEG, 1)}°`);
+        T.steps.push(M.X > 0 ? `Vo,rms = ${n2(Vm)} × √[(${n2(t2 - t1, 3)} − (sin ${n2(2 * t2 / DEG, 1)}° − sin ${n2(2 * t1 / DEG, 1)}°)/2) / 2π] = ${n2(Vo)} V`
+          : `Vo,rms = ${n2(Vs)} × √[(π − ${n2(t1, 3)} + sin ${n2(2 * t1 / DEG, 1)}° / 2) / π] = ${n2(Vo)} V`);
+      }
+      T.instant = 'vo = vs while the TRIAC conducts, once in each half-cycle, and 0 otherwise.';
+      if (M.used.length === 1) T.notes.push('With this gate pulse only one direction of the TRIAC fires each cycle, so the output is asymmetric. The comparison uses the exact RMS of that waveform.');
+      cmp('RMS output voltage', M.Vrms, 'V', 'Vrms'); T.cmp.scale = Vs; T.cmp.formulaV = Vo; break;
+    }
+    case 'tcr': {
+      const B = (2 * (Math.PI - a) + Math.sin(2 * a)) / (Math.PI * w * P.L), I1f = Vm / Math.SQRT2 * B;
+      T.eq.push('B_L(α) = [2(π − α) + sin 2α] / (π·ω·L)   (90° ≤ α ≤ 180°)', 'I1 = Vrms·B_L(α),   Q = Vrms²·B_L(α)');
+      T.steps.push(`ωL = ${n2(w * P.L, 2)} Ω`);
+      const M = runModel('tcr', P);
+      if (P.alpha >= 90 || !M) {
+        T.steps.push(`B_L(${A}) = [2(π − ${n2(a, 3)}) + sin ${n2(2 * P.alpha, 0)}${deg}] / (π × ${n2(w * P.L, 2)}) = ${(B).toFixed(4)} S`,
+          `I1 = ${n2(Vm / Math.SQRT2)} × ${B.toFixed(4)} = ${n2(I1f, 2)} A,   Q = ${n2(Vm * Vm / 2 * B / 1000, 2)} kvar`);
+        T.mode = P.alpha >= 180 ? 'none' : 'dcm';
+        cmp('Fundamental reactor current (RMS)', P.alpha >= 180 ? 0 : I1f, 'A', 'Io1');
+      } else {
+        const one = M.used.length === 1;
+        T.mode = 'dcm';
+        T.steps.push(one ? `Below 90° each thyristor would conduct for more than 180°. T2's ${n2(P.width, 0)}° gate pulse ends while T1 is still conducting, so T2 never fires and the reactor current is one-directional.`
+          : `Below 90° each thyristor would conduct for more than 180°, so the second thyristor fires late, when the first one stops. Conduction is asymmetric.`);
+        T.steps.push(`Analytical solution of iL: fundamental I1 = ${n2(M.I1, 2)} A${one ? `, DC offset = ${n2(M.Idc, 2)} A` : ''}`);
+        T.notes.push('TCRs are operated with α between 90° and 180°. The formula above applies only in that range.');
+        cmp('Fundamental reactor current (RMS)', M.I1, 'A', 'Io1');
+      }
+      T.instant = 'iL(ωt) = (Vm / ωL)·(cos α − cos ωt) for α ≤ ωt ≤ 2π − α. α runs from 90° (full conduction) to 180° (blocked).';
+      if (T.cmp) T.cmp.scale = Vm / Math.SQRT2 / Math.max(1e-9, w * P.L);
+      break;
+    }
+    case 'buck':
+      T.eq.push('Vo = D·Vin   (continuous inductor current)', 'ΔIL = (Vin − Vo)·D / (f·L)');
+      T.steps.push(`Vo = ${n2(P.D, 2)} × ${n2(P.Vin)} = ${n2(P.D * P.Vin)} V`, `ΔIL = (${n2(P.Vin)} − ${n2(P.D * P.Vin)}) × ${n2(P.D, 2)} / (${n2(P.fsw / 1000, 1)} kHz × ${n2(P.L * 1e6, 0)} µH) = ${n2((P.Vin - P.D * P.Vin) * P.D / (P.fsw * P.L), 2)} A`);
+      T.instant = 'Switch on: the inductor charges from Vin − Vo. Switch off: the diode freewheels and the inductor discharges into the output.';
+      T.notes.push('The diode drop and switch resistance lower the simulated output a little.');
+      cmp('Average output voltage', P.D * P.Vin, 'V', 'Vdc'); T.cmp.scale = P.Vin; break;
+    case 'boost':
+      T.eq.push('Vo = Vin / (1 − D)   (continuous inductor current)');
+      T.steps.push(`Vo = ${n2(P.Vin)} / (1 − ${n2(P.D, 2)}) = ${n2(P.Vin / (1 - P.D))} V`);
+      T.instant = 'Switch on: the inductor charges from Vin. Switch off: the inductor adds its voltage to Vin and feeds the output through the diode.';
+      T.notes.push('The diode drop and switch resistance lower the simulated output, more so than in a buck because the input current is larger.');
+      cmp('Average output voltage', P.Vin / (1 - P.D), 'V', 'Vdc'); T.cmp.scale = P.Vin; T.cmp.loose = true; break;
+    case 'inverter': {
+      const tau = P.L / P.R, Th = 1 / (2 * P.fsw), x = Math.exp(-Th / tau), Ipk = P.Vin / P.R * (1 - x) / (1 + x);
+      T.eq.push('Vo1,rms = 4·Vdc / (π√2) ≈ 0.9·Vdc', 'Ipk = (Vdc / R)·(1 − e^(−T/2τ)) / (1 + e^(−T/2τ)),   τ = L/R');
+      T.steps.push(`Vo1,rms = 0.9 × ${n2(P.Vin)} = ${n2(0.9003 * P.Vin)} V`, `τ = ${n2(tau * 1000, 2)} ms,   T/2 = ${n2(Th * 1000, 2)} ms`, `Ipk = ${n2(P.Vin / P.R, 2)} × (1 − ${x.toFixed(4)}) / (1 + ${x.toFixed(4)}) = ${n2(Ipk, 3)} A`);
+      T.instant = 'S1, S2 on for the first half-period (vo = +Vdc), S3, S4 for the second (vo = −Vdc). The diodes return load current during the dead time.';
+      cmp('Peak load current', Ipk, 'A', 'Imax'); T.cmp.scale = P.Vin / P.R; break;
+    }
+    default: return null;
+  }
+  if (T.cmp && m) {
+    const sv = m[T.cmp.simKey];
+    T.cmp.sim = sv;
+    if (isFinite(sv) && isFinite(T.cmp.value)) {
+      T.cmp.abs = sv - T.cmp.value;
+      if (Math.abs(T.cmp.value) > 1e-9) T.cmp.err = (sv - T.cmp.value) / Math.abs(T.cmp.value) * 100;
+      // judge the difference against the size of the result and the size of the source, so results near 0 V are not called 100 % wrong
+      const sc = Math.abs(T.cmp.scale || 0), ab = Math.abs(T.cmp.abs), tv = Math.abs(T.cmp.value);
+      const k = T.cmp.loose ? 2 : 1;
+      T.cmp.grade = ab <= k * Math.max(0.02 * tv, 0.01 * sc) ? 'good' : ab <= k * Math.max(0.06 * tv, 0.03 * sc) ? 'mid' : 'bad';
+    }
+  }
+  return T;
+}
+
+function guessAnalysis(circ) {
+  const names = c => c ? c.name : '';
+  const ac = circ.comps.find(c => c.type === 'VAC') || circ.comps.find(c => c.type === 'VDC');
+  const vm = circ.comps.find(c => c.type === 'VM' && c.plotV);
+  const rV = circ.comps.find(c => c.type === 'R' && c.plotV);
+  const lI = circ.comps.find(c => c.type === 'L' && c.plotI);
+  const rI = circ.comps.find(c => c.type === 'R' && c.plotI);
+  return {
+    vo: vm ? `V(${vm.name})` : rV ? `V(${rV.name})` : '',
+    io: lI ? `I(${lI.name})` : rI ? `I(${rI.name})` : '',
+    vs: ac && ac.plotV ? `V(${names(ac)})` : '',
+    is: ac && ac.plotI ? `I(${names(ac)})` : '',
+    theory: '',
+  };
+}
+
+function exampleCircuit(ex) {
+  let id = 1;
+  return {
+    comps: ex.comps.map(([type, x, y, r, name, p, plots, flip]) => {
+      const params = {};
+      for (const d of TYPES[type].params) params[d.k] = (p && p[d.k] !== undefined) ? p[d.k] : d.def;
+      return { id: 'c' + (id++), type, x, y, r, name, p: params, plotV: !!plots && plots.includes('V'), plotI: !!plots && plots.includes('I'), flip: !!flip };
+    }),
+    wires: ex.wires.map(([x1, y1, x2, y2]) => ({ id: 'w' + (id++), x1, y1, x2, y2 })),
+    sim: Object.assign({}, ex.sim),
+    an: Object.assign({}, ex.an || {}),
+  };
+}
+
+if (typeof module !== 'undefined') module.exports = { baseFreq, cycleWindow, computeMetrics, conductionTable, theory, THEORIES, guessAnalysis, harmonicsOf, TYPES, EXAMPLES, exampleCircuit, simulate, statsOf, parseVal, fmtEng, fmtQty, fmtInput, analyze, pinsOf, buildNetlist };
+</script>
+<script>// ===================== Editor + scope UI =====================
+(function () {
+'use strict';
+const S = GRID;
+const $ = s => document.querySelector(s);
+const svg = $('#sch'), dyn = $('#dyn');
+const STORE_KEY = 'pe-bench-circuit-v1';
+
+let circ = null;
+let tool = 'select';          // 'select' | 'wire' | 'place:TYPE'
+let sel = null;               // {kind:'comp'|'wire', id}
+let ghostR = 0;
+let wireStart = null;
+let mouseG = null;
+let drag = null;
+let view = { x: 0, y: 0, w: 900, h: 500 };
+let result = null, simError = null;
+let plotWin = null, cursorT = null, layout = 'separate';
+let undoStack = [], redoStack = [];
+let idCounter = 1;
+let linkAlpha = true, linkPWM = true;
+let sliderUndo = false;
+let simTimer = 0;
+
+const newId = p => p + (idCounter++);
+const esc = s => String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+const getComp = id => circ.comps.find(c => c.id === id);
+const getWire = id => circ.wires.find(w => w.id === id);
+
+// ---------- symbols (local frame: pin 1 at 0,0 and pin 2 at 80,0) ----------
+function sym(type) {
+  switch (type) {
+    case 'R': return '<path d="M0 0H20L23.3 -7L30 7L36.7 -7L43.3 7L50 -7L56.7 7L60 0H80"/>';
+    case 'L': return '<path d="M0 0H20a5 5 0 0 1 10 0a5 5 0 0 1 10 0a5 5 0 0 1 10 0a5 5 0 0 1 10 0H80"/>';
+    case 'C': return '<path d="M0 0H36M44 0H80"/><path class="thick" d="M36 -13V13M44 -13V13"/>';
+    case 'D': return '<path d="M0 0H30M50 0H80"/><path class="fill" d="M30 -10L30 10L50 0Z"/><path class="thick" d="M50 -10V10"/>';
+    case 'SCR': return '<path d="M0 0H30M50 0H80"/><path class="fill" d="M30 -10L30 10L50 0Z"/><path class="thick" d="M50 -10V10"/><path d="M48 5L57 14H64"/>';
+    case 'TRIAC': return '<path d="M0 0H30M50 0H80"/><path class="thick" d="M30 -13V13M50 -13V13"/><path class="fill" d="M30 -12L30 -1L50 -6.5Z M50 1L50 12L30 6.5Z"/><path d="M50 9L59 18H66"/>';
+    case 'SW': return '<path d="M0 0H26M56 0H80"/><circle class="fill" cx="28" cy="0" r="2.6"/><path d="M28 0L54 -12"/><circle class="fill" cx="56" cy="0" r="2.6"/><path class="thin" d="M41 -6V-17"/><path class="thin" d="M30 -20h5v-6h6v6h6v-6h5"/>';
+    case 'VAC': return '<path d="M0 0H24M56 0H80"/><circle cx="40" cy="0" r="16"/><path class="thin" d="M31 0c3 -10 6 -10 9 0s6 10 9 0"/><path class="thin" d="M12 -10h7M15.5 -13.5v7"/>';
+    case 'VDC': return '<path d="M0 0H36M44 0H80"/><path d="M36 -15V15"/><path class="thick" d="M44 -8V8"/><path class="thin" d="M24 -14h7M27.5 -17.5v7"/>';
+    case 'VM': return '<path d="M0 0H24M56 0H80"/><circle cx="40" cy="0" r="16"/><path class="thin" d="M12 -10h7M15.5 -13.5v7"/>';
+    case 'GND': return '<path d="M0 0H10"/><path d="M10 -11V11M15 -7V7M20 -3V3"/>';
+  }
+  return '';
+}
+function valStr(c) {
+  const p = c.p;
+  switch (c.type) {
+    case 'R': return fmtQty(p.R, 'Ω');
+    case 'L': return fmtQty(p.L, 'H', 4, 0);
+    case 'C': return fmtQty(p.C, 'F', 4, 0);
+    case 'D': return p.Vf ? 'Vf ' + fmtQty(p.Vf, 'V') : 'ideal';
+    case 'SCR': return 'α ' + trimDeg(p.alpha) + (p.offset ? ' +' + trimDeg(p.offset) : '');
+    case 'TRIAC': return 'α ' + trimDeg(p.alpha);
+    case 'SW': return fmtQty(p.f, 'Hz', 3) + ' · ' + (+p.duty.toFixed(2)) + '%';
+    case 'VAC': return fmtQty(p.Vpk, 'V', 3) + (p.phase ? ' ∠' + trimDeg(p.phase).replace('-', '−') : ' pk · ' + fmtQty(p.f, 'Hz', 3));
+    case 'VDC': return fmtQty(p.V, 'V');
+  }
+  return '';
+}
+const trimDeg = v => (+(+v).toFixed(2)) + '°';
+
+// ---------- circuit helpers ----------
+function normalize(obj) {
+  if (!obj || typeof obj !== 'object' || !Array.isArray(obj.comps) || !Array.isArray(obj.wires)) throw new Error('This text is not a circuit. It needs "comps" and "wires" lists.');
+  const out = { comps: [], wires: [], sim: { tstop: 0.06, dt: 20e-6, tfrom: 0 } };
+  const int = v => { const n = Math.round(+v); if (!isFinite(n)) throw new Error('A position in the circuit is not a number.'); return n; };
+  const names = new Set(), usedIds = new Set();
+  const keepId = (raw, pfx) => {
+    if (typeof raw === 'string' && new RegExp('^' + pfx + '\\d+$').test(raw) && !usedIds.has(raw)) {
+      usedIds.add(raw); idCounter = Math.max(idCounter, +raw.slice(1) + 1); return raw;
+    }
+    return null;
+  };
+  for (const c of obj.comps) {
+    const T = TYPES[c && c.type];
+    if (!T) throw new Error('Unknown part type: ' + (c && c.type));
+    const p = {};
+    for (const d of T.params) { const v = c.p && c.p[d.k]; p[d.k] = (typeof v === 'number' && isFinite(v)) ? v : d.def; }
+    let name = typeof c.name === 'string' && c.name.trim() ? c.name.trim().slice(0, 16) : '';
+    if (!name || names.has(name)) name = '';
+    const cc = { id: keepId(c.id, 'c'), type: c.type, x: int(c.x), y: int(c.y), r: ((int(c.r || 0) % 4) + 4) % 4, name, p, plotV: !!c.plotV, plotI: !!c.plotI, flip: !!c.flip };
+    out.comps.push(cc);
+    if (name) names.add(name);
+  }
+  for (const c of out.comps) if (!c.name) { c.name = nextName(TYPES[c.type].prefix, out.comps); }
+  const wireKeys = new Set();
+  for (const w of obj.wires) {
+    const ww = { id: keepId(w && w.id, 'w'), x1: int(w.x1), y1: int(w.y1), x2: int(w.x2), y2: int(w.y2) };
+    if (ww.x1 === ww.x2 && ww.y1 === ww.y2) continue;
+    const a = ww.x1 + ',' + ww.y1, b = ww.x2 + ',' + ww.y2, k = a < b ? a + '|' + b : b + '|' + a;
+    if (wireKeys.has(k)) continue; // duplicate wires would draw false junction dots
+    wireKeys.add(k); out.wires.push(ww);
+  }
+  for (const c of out.comps) if (!c.id) c.id = newId('c');
+  for (const w of out.wires) if (!w.id) w.id = newId('w');
+  if (obj.sim) for (const k of ['tstop', 'dt', 'tfrom']) { const v = +obj.sim[k]; if (isFinite(v) && v >= 0) out.sim[k] = v; }
+  if (!(out.sim.dt > 0)) out.sim.dt = 20e-6;
+  if (!(out.sim.tstop > out.sim.dt)) out.sim.tstop = 0.06;
+  out.an = {};
+  if (obj.an && typeof obj.an === 'object') for (const k of ['vo', 'io', 'vs', 'is', 'theory']) if (typeof obj.an[k] === 'string') out.an[k] = obj.an[k].slice(0, 40);
+  return out;
+}
+function nextName(prefix, comps) {
+  const re = new RegExp('^' + prefix + '(\\d+)$');
+  let mx = 0;
+  for (const c of comps) { const m = re.exec(c.name || ''); if (m) mx = Math.max(mx, +m[1]); }
+  return prefix + (mx + 1);
+}
+function serial(withIds) {
+  return {
+    comps: circ.comps.map(({ id, type, x, y, r, name, p, plotV, plotI, flip }) => Object.assign(withIds ? { id } : {}, { type, x, y, r, name, p, plotV, plotI, flip })),
+    wires: circ.wires.map(({ id, x1, y1, x2, y2 }) => Object.assign(withIds ? { id } : {}, { x1, y1, x2, y2 })),
+    sim: circ.sim,
+    an: circ.an || {},
+  };
+}
+function pushUndo() { undoStack.push(JSON.stringify(serial(true))); if (undoStack.length > 120) undoStack.shift(); redoStack = []; updateUndoBtns(); }
+function pushUndoRaw(s) { undoStack.push(s); if (undoStack.length > 120) undoStack.shift(); redoStack = []; updateUndoBtns(); }
+function undo() {
+  if (!undoStack.length) return;
+  redoStack.push(JSON.stringify(serial(true)));
+  circ = normalize(JSON.parse(undoStack.pop()));
+  sel = null; wireStart = null; afterRestore();
+}
+function redo() {
+  if (!redoStack.length) return;
+  undoStack.push(JSON.stringify(serial(true)));
+  circ = normalize(JSON.parse(redoStack.pop()));
+  sel = null; wireStart = null; afterRestore();
+}
+function afterRestore() { updateUndoBtns(); renderProps(); render(); changed(); }
+function updateUndoBtns() {
+  const u = $('#undoBtn'), r = $('#redoBtn');
+  if (u) u.disabled = !undoStack.length;
+  if (r) r.disabled = !redoStack.length;
+}
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(serial())); } catch (e) { /* storage unavailable */ } }
+
+function changed() {
+  save();
+  updateCtrlBar();
+  if ($('#autoRun').checked) scheduleSim(220);
+  else setStatusStale();
+}
+function scheduleSim(ms) { clearTimeout(simTimer); simTimer = setTimeout(runSim, ms); }
+function setStatusStale() { if (result) $('#simStatus').textContent = 'Circuit changed. Press Run simulation to update.'; }
+
+function cleanupWires() {
+  const seen = new Set();
+  circ.wires = circ.wires.filter(w => {
+    if (w.x1 === w.x2 && w.y1 === w.y2) return false;
+    const a = w.x1 + ',' + w.y1, b = w.x2 + ',' + w.y2;
+    const k = a < b ? a + '|' + b : b + '|' + a;
+    if (seen.has(k)) return false;
+    seen.add(k); return true;
+  });
+}
+function linkedEnds(c) {
+  const pins = pinsOf(c), links = [];
+  for (const w of circ.wires) pins.forEach(([x, y], i) => {
+    if (w.x1 === x && w.y1 === y) links.push({ w, end: 1, pin: i });
+    if (w.x2 === x && w.y2 === y) links.push({ w, end: 2, pin: i });
+  });
+  return links;
+}
+function updateLinks(c, links) {
+  const pins = pinsOf(c);
+  for (const l of links) { const [x, y] = pins[l.pin]; if (l.end === 1) { l.w.x1 = x; l.w.y1 = y; } else { l.w.x2 = x; l.w.y2 = y; } }
+}
+function isConnPoint(g) {
+  const [x, y] = g;
+  for (const c of circ.comps) for (const [px, py] of pinsOf(c)) if (px === x && py === y) return true;
+  for (const w of circ.wires) {
+    if ((w.x1 === x && w.y1 === y) || (w.x2 === x && w.y2 === y)) return true;
+    if (onInteriorUI(x, y, w)) return true;
+  }
+  return false;
+}
+function onInteriorUI(px, py, w) {
+  const dx = w.x2 - w.x1, dy = w.y2 - w.y1, len2 = dx * dx + dy * dy;
+  if (!len2 || dx * (py - w.y1) - dy * (px - w.x1) !== 0) return false;
+  const dot = (px - w.x1) * dx + (py - w.y1) * dy;
+  return dot > 0 && dot < len2;
+}
+
+// ---------- rendering ----------
+function conductingSet() {
+  const set = new Set();
+  if (!result || cursorT === null) return set;
+  const i = Math.min(result.steps - 1, Math.max(0, Math.round(cursorT / result.dt) - 1));
+  const n = result.sw.ids.length;
+  for (let j = 0; j < n; j++) if (result.sw.states[i * n + j] & 1) set.add(result.sw.ids[j]);
+  return set;
+}
+function compMarkup(c, cls, onSet) {
+  const tr = `translate(${c.x * S} ${c.y * S}) rotate(${c.r * 90})`;
+  const on = onSet && onSet.has(c.id) ? ' on' : '';
+  return `<g class="comp ${cls}${on}" transform="${tr}">${sym(c.type)}</g>`;
+}
+function liveValues() {
+  const map = new Map();
+  if (!result || cursorT === null) return map;
+  const i = cursorIdx();
+  for (const s of result.signals) {
+    const arr = map.get(s.compId) || [];
+    arr.push(fmtQty(s.data[i], s.unit, 3));
+    map.set(s.compId, arr);
+  }
+  return map;
+}
+function labelMarkup(c, onSet, live) {
+  if (c.type === 'GND') return '';
+  const lv = live && live.get(c.id) ? live.get(c.id).join('  ') : '';
+  const pins = pinsOf(c);
+  const cx = (pins[0][0] + pins[1][0]) / 2 * S, cy = (pins[0][1] + pins[1][1]) / 2 * S;
+  const on = onSet && onSet.has(c.id) ? ' on' : '';
+  const v = valStr(c);
+  let h = '';
+  if (c.type === 'VM') h += `<text class="vletter" x="${cx}" y="${cy + 5}" text-anchor="middle">V</text>`;
+  if (c.r % 2 === 0) {
+    const below = (c.type === 'SCR' || c.type === 'TRIAC') && c.r === 2;
+    const lift = (c.type === 'SW' && c.r === 0) ? 16 : (c.type === 'VAC' || c.type === 'VM') ? 8 : 0;
+    const y1 = below ? cy + 30 : cy - (v ? 26 : 22) - lift, y2 = below ? cy + 42 : cy - 13 - lift;
+    h += `<text class="lbl${on}" x="${cx}" y="${y1}" text-anchor="middle">${esc(c.name)}</text>`;
+    if (v) h += `<text class="val" x="${cx}" y="${y2}" text-anchor="middle">${esc(v)}</text>`;
+    if (lv) h += `<text class="live" x="${cx}" y="${below ? y2 + 13 : y1 - 14}" text-anchor="middle">${esc(lv)}</text>`;
+  } else {
+    const left = !!c.flip;
+    const gateSide = (c.type === 'SCR' || c.type === 'TRIAC');
+    // gate lead sits on the left when r=1 and on the right when r=3
+    let dx = 20;
+    if (gateSide && ((c.r === 1 && left) || (c.r === 3 && !left))) dx = 30;
+    if (c.type === 'SW' && ((c.r === 1 && !left) || (c.r === 3 && left))) dx = 34;
+    if (c.type === 'VAC' || c.type === 'VM') dx = 26;
+    const x = left ? cx - dx : cx + dx, anchor = left ? 'end' : 'start';
+    h += `<text class="lbl${on}" x="${x}" y="${cy - (v ? 3 : -4)}" text-anchor="${anchor}">${esc(c.name)}</text>`;
+    if (v) h += `<text class="val" x="${x}" y="${cy + 11}" text-anchor="${anchor}">${esc(v)}</text>`;
+    if (lv) h += `<text class="live" x="${x}" y="${cy + (v ? 25 : 18)}" text-anchor="${anchor}">${esc(lv)}</text>`;
+  }
+  return h;
+}
+function render() {
+  svg.setAttribute('viewBox', `${view.x} ${view.y} ${view.w} ${view.h}`);
+  svg.classList.toggle('tool-wire', tool === 'wire');
+  svg.classList.toggle('tool-place', tool.startsWith('place:'));
+  const A = analyze(circ);
+  const onSet = conductingSet();
+  const pad = 4000;
+  let h = `<rect x="${view.x - pad}" y="${view.y - pad}" width="${view.w + 2 * pad}" height="${view.h + 2 * pad}" fill="url(#gridpat)"/>`;
+  // selection halo
+  if (sel && sel.kind === 'comp') {
+    const c = getComp(sel.id);
+    if (c) {
+      const pins = pinsOf(c);
+      if (pins.length === 2) {
+        const x0 = Math.min(pins[0][0], pins[1][0]) * S, x1 = Math.max(pins[0][0], pins[1][0]) * S;
+        const y0 = Math.min(pins[0][1], pins[1][1]) * S, y1 = Math.max(pins[0][1], pins[1][1]) * S;
+        h += `<rect class="selhalo" x="${x0 - 18}" y="${y0 - 18}" width="${x1 - x0 + 36}" height="${y1 - y0 + 36}" rx="8"/>`;
+      } else {
+        h += `<circle class="selhalo" cx="${c.x * S + DIRS[c.r][0] * 12}" cy="${c.y * S + DIRS[c.r][1] * 12}" r="20"/>`;
+      }
+    }
+  }
+  for (const w of circ.wires) {
+    const s = sel && sel.kind === 'wire' && sel.id === w.id ? ' sel' : '';
+    h += `<line class="wire${s}" x1="${w.x1 * S}" y1="${w.y1 * S}" x2="${w.x2 * S}" y2="${w.y2 * S}"/>`;
+  }
+  for (const c of circ.comps) {
+    const s = sel && sel.kind === 'comp' && sel.id === c.id ? 'sel' : '';
+    h += compMarkup(c, s, onSet);
+  }
+  const live = liveValues();
+  for (const c of circ.comps) h += labelMarkup(c, onSet, live);
+  // junction dots & open pins
+  for (const [k, n] of A.count) {
+    if (n >= 3) { const [x, y] = k.split(',').map(Number); h += `<circle class="dot" cx="${x * S}" cy="${y * S}" r="3.6"/>`; }
+  }
+  for (const c of circ.comps) for (const [x, y] of pinsOf(c)) {
+    if ((A.count.get(x + ',' + y) || 0) < 2) h += `<circle class="pin-open" cx="${x * S}" cy="${y * S}" r="3.6"/>`;
+  }
+  if (sel && sel.kind === 'comp') {
+    const c = getComp(sel.id);
+    if (c && TYPES[c.type].pins === 2) h += `<rect class="pin1" x="${c.x * S - 4}" y="${c.y * S - 4}" width="8" height="8"/>`;
+  }
+  // wire preview
+  if (tool === 'wire' && wireStart) {
+    h += `<circle class="wstart" cx="${wireStart[0] * S}" cy="${wireStart[1] * S}" r="4"/>`;
+    if (mouseG) {
+      const corner = firstHoriz(wireStart, mouseG) ? [mouseG[0], wireStart[1]] : [wireStart[0], mouseG[1]];
+      h += `<path class="wprev" d="M${wireStart[0] * S} ${wireStart[1] * S}L${corner[0] * S} ${corner[1] * S}L${mouseG[0] * S} ${mouseG[1] * S}"/>`;
+    }
+  }
+  if (tool === 'wire' && mouseG && !wireStart) h += `<circle class="wstart" cx="${mouseG[0] * S}" cy="${mouseG[1] * S}" r="3" opacity="0.6"/>`;
+  if (tool.startsWith('place:') && mouseG) {
+    h += compMarkup({ type: tool.slice(6), x: mouseG[0], y: mouseG[1], r: ghostR, id: '' }, 'ghost', null);
+  }
+  dyn.innerHTML = h;
+  $('#sheetTag').textContent = `${circ.comps.length} parts · ${circ.wires.length} wires`;
+  const ct = $('#condTag');
+  if (result && cursorT !== null && result.sw.ids.length) {
+    const names = result.sw.ids.map((id, j) => onSet.has(id) ? result.sw.names[j] : null).filter(Boolean);
+    ct.textContent = names.length ? 'Conducting: ' + names.join(' + ') : 'All devices blocking';
+    ct.hidden = false;
+  } else ct.hidden = true;
+  updateHint();
+}
+const firstHoriz = (a, b) => Math.abs(b[0] - a[0]) >= Math.abs(b[1] - a[1]);
+function updateHint() {
+  let t;
+  if (tool === 'wire') t = wireStart ? 'Click to add a corner. Click a pin or wire to finish. Esc or right-click stops.' : 'Click a pin or grid point to start a wire.';
+  else if (tool.startsWith('place:')) t = `Click to place ${TYPES[tool.slice(6)].name.toLowerCase()} · R rotates · Esc when done`;
+  else t = 'Drag parts to move them · drag empty space to pan · scroll to zoom · R rotates · Delete removes';
+  $('#hint').textContent = t;
+}
+
+// ---------- palette ----------
+const PALETTE = [
+  ['Tools', [['tool', 'select', 'Select / move', 'Esc'], ['tool', 'wire', 'Wire', 'W']]],
+  ['Sources', [['place', 'VAC', 'AC source'], ['place', 'VDC', 'DC source']]],
+  ['Passive', [['place', 'R', 'Resistor'], ['place', 'L', 'Inductor'], ['place', 'C', 'Capacitor']]],
+  ['Semiconductors', [['place', 'D', 'Diode'], ['place', 'SCR', 'Thyristor'], ['place', 'TRIAC', 'TRIAC'], ['place', 'SW', 'MOSFET / IGBT']]],
+  ['Measure', [['place', 'VM', 'Voltage probe'], ['place', 'GND', 'Ground']]],
+];
+function iconSvg(type) {
+  if (type === 'select') return '<svg viewBox="0 0 34 20" aria-hidden="true"><path d="M12 2L12 17L16 13L19 19L21.5 18L18.5 12L24 12Z" fill="currentColor"/></svg>';
+  if (type === 'wire') return '<svg viewBox="0 0 34 20" aria-hidden="true"><path d="M3 15H16V5H31" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="16" cy="15" r="2.4" fill="currentColor"/></svg>';
+  const vb = type === 'GND' ? '-6 -22 40 44' : '-4 -24 88 48';
+  return `<svg viewBox="${vb}" aria-hidden="true"><g class="comp">${sym(type)}</g></svg>`;
+}
+function buildPalette() {
+  let h = '';
+  for (const [title, items] of PALETTE) {
+    h += `<div class="pgroup"><h3>${title}</h3>`;
+    for (const [kind, key, label, kbd] of items) {
+      h += `<button type="button" class="pbtn" data-kind="${kind}" data-key="${key}" title="${label}">${iconSvg(key)}<span>${label}</span>${kbd ? `<kbd>${kbd}</kbd>` : ''}</button>`;
+    }
+    h += '</div>';
+  }
+  h += `<div class="pgroup"><h3>Edit</h3><div class="prow">
+    <button type="button" class="pbtn" id="undoBtn" title="Undo (Ctrl+Z)">Undo</button>
+    <button type="button" class="pbtn" id="redoBtn" title="Redo (Ctrl+Y)">Redo</button>
+    <button type="button" class="pbtn" id="rotBtn" title="Rotate (R)">Rotate</button>
+    <button type="button" class="pbtn" id="delBtn" title="Delete">Delete</button>
+    </div><button type="button" class="pbtn" id="clearBtn">Clear sheet</button></div>`;
+  $('#palette').innerHTML = h;
+  $('#palette').addEventListener('click', ev => {
+    const b = ev.target.closest('.pbtn');
+    if (!b) return;
+    if (b.id === 'undoBtn') return undo();
+    if (b.id === 'redoBtn') return redo();
+    if (b.id === 'rotBtn') return rotateSel();
+    if (b.id === 'delBtn') return deleteSel();
+    if (b.id === 'clearBtn') return clearSheet(b);
+    if (b.dataset.kind === 'tool') setTool(b.dataset.key);
+    else setTool('place:' + b.dataset.key);
+  });
+  updateUndoBtns();
+}
+let clearArmed = 0;
+function clearSheet(b) {
+  if (!circ.comps.length && !circ.wires.length) return;
+  if (!clearArmed) {
+    b.textContent = 'Click again to clear';
+    clearArmed = setTimeout(() => { clearArmed = 0; b.textContent = 'Clear sheet'; }, 2500);
+    return;
+  }
+  clearTimeout(clearArmed); clearArmed = 0; b.textContent = 'Clear sheet';
+  setPlaying(false);
+  pushUndo(); circ.comps = []; circ.wires = []; sel = null; result = null; simError = null;
+  renderProps(); render(); changed(); drawPlot();
+}
+function setTool(t) {
+  tool = t; wireStart = null;
+  if (t.startsWith('place:')) ghostR = t === 'place:GND' ? 1 : 0;
+  document.querySelectorAll('#palette .pbtn[data-kind]').forEach(b => {
+    const k = b.dataset.kind === 'tool' ? b.dataset.key : 'place:' + b.dataset.key;
+    b.classList.toggle('active', k === t);
+  });
+  render();
+}
+
+// ---------- editing actions ----------
+function rotateSel() {
+  if (tool.startsWith('place:')) { ghostR = (ghostR + 1) % 4; render(); return; }
+  if (!sel || sel.kind !== 'comp') return;
+  const c = getComp(sel.id); if (!c) return;
+  pushUndo();
+  const links = linkedEnds(c);
+  c.r = (c.r + 1) % 4;
+  updateLinks(c, links); cleanupWires();
+  render(); changed();
+}
+function deleteSel() {
+  if (!sel) return;
+  pushUndo();
+  if (sel.kind === 'comp') circ.comps = circ.comps.filter(c => c.id !== sel.id);
+  else circ.wires = circ.wires.filter(w => w.id !== sel.id);
+  sel = null; renderProps(); render(); changed();
+}
+function placeAt(g) {
+  const type = tool.slice(6), T = TYPES[type];
+  pushUndo();
+  const p = {};
+  for (const d of T.params) p[d.k] = d.def;
+  // new thyristors/switches follow the shared settings when linking is on
+  if ((type === 'SCR' || type === 'TRIAC') && linkAlpha) { const o = circ.comps.find(c => c.type === 'SCR' || c.type === 'TRIAC'); if (o) { p.alpha = o.p.alpha; p.f = o.p.f; } }
+  if (type === 'SW' && linkPWM) { const o = circ.comps.find(c => c.type === 'SW'); if (o) { p.f = o.p.f; p.duty = o.p.duty; } }
+  const c = { id: newId('c'), type, x: g[0], y: g[1], r: ghostR, name: nextName(T.prefix, circ.comps), p, plotV: type === 'R' || type === 'VM', plotI: type === 'L', flip: false };
+  circ.comps.push(c);
+  sel = { kind: 'comp', id: c.id };
+  renderProps(); render(); changed();
+}
+function wireClick(g) {
+  if (!wireStart) { wireStart = g; return; }
+  if (g[0] === wireStart[0] && g[1] === wireStart[1]) { wireStart = null; return; }
+  const finish = isConnPoint(g);
+  pushUndo();
+  const a = wireStart, corner = firstHoriz(a, g) ? [g[0], a[1]] : [a[0], g[1]];
+  for (const [p, q] of [[a, corner], [corner, g]]) {
+    if (p[0] !== q[0] || p[1] !== q[1]) circ.wires.push({ id: newId('w'), x1: p[0], y1: p[1], x2: q[0], y2: q[1] });
+  }
+  cleanupWires();
+  wireStart = finish ? null : g;
+  changed();
+}
+
+// ---------- hit testing ----------
+function distSeg(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+  let t = l2 ? ((px - ax) * dx + (py - ay) * dy) / l2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+function hitTest(p) {
+  let best = null, bd = Infinity;
+  for (const c of circ.comps) {
+    const pins = pinsOf(c);
+    let d;
+    if (pins.length === 2) d = distSeg(p.x, p.y, pins[0][0] * S, pins[0][1] * S, pins[1][0] * S, pins[1][1] * S);
+    else d = distSeg(p.x, p.y, c.x * S, c.y * S, (c.x + DIRS[c.r][0]) * S, (c.y + DIRS[c.r][1]) * S);
+    if (d < 14 && d < bd) { bd = d; best = { kind: 'comp', id: c.id }; }
+  }
+  if (best) return best;
+  for (const w of circ.wires) {
+    const d = distSeg(p.x, p.y, w.x1 * S, w.y1 * S, w.x2 * S, w.y2 * S);
+    if (d < 7 && d < bd) { bd = d; best = { kind: 'wire', id: w.id }; }
+  }
+  return best;
+}
+
+// ---------- pointer handling on the schematic ----------
+function svgPt(ev) {
+  const m = svg.getScreenCTM();
+  if (!m) return { x: 0, y: 0 };
+  const p = new DOMPoint(ev.clientX, ev.clientY).matrixTransform(m.inverse());
+  return { x: p.x, y: p.y };
+}
+const snap = p => [Math.round(p.x / S), Math.round(p.y / S)];
+
+svg.addEventListener('contextmenu', ev => {
+  ev.preventDefault();
+  if (tool === 'wire') { wireStart = null; render(); }
+  else if (tool.startsWith('place:')) setTool('select');
+});
+svg.addEventListener('pointerdown', ev => {
+  if (ev.button === 2) return;
+  const p = svgPt(ev), g = snap(p);
+  mouseG = g;
+  const m = svg.getScreenCTM();
+  const startPan = () => {
+    drag = { kind: 'pan', sx: ev.clientX, sy: ev.clientY, vb: Object.assign({}, view), scale: m ? 1 / m.a : 1 };
+    try { svg.setPointerCapture(ev.pointerId); } catch (e) { /* ignore */ }
+  };
+  if (ev.button === 1) { ev.preventDefault(); startPan(); return; }
+  if (tool === 'wire') { wireClick(g); render(); return; }
+  if (tool.startsWith('place:')) { placeAt(g); return; }
+  const hit = hitTest(p);
+  if (hit && hit.kind === 'comp') {
+    const c = getComp(hit.id);
+    sel = hit;
+    drag = { kind: 'comp', id: c.id, grab: [g[0] - c.x, g[1] - c.y], snap: JSON.stringify(serial(true)), moved: false, links: linkedEnds(c) };
+    try { svg.setPointerCapture(ev.pointerId); } catch (e) { /* ignore */ }
+    renderProps(); render(); return;
+  }
+  if (hit && hit.kind === 'wire') { sel = hit; renderProps(); render(); return; }
+  if (sel) { sel = null; renderProps(); }
+  startPan(); render();
+});
+svg.addEventListener('pointermove', ev => {
+  const p = svgPt(ev), g = snap(p);
+  if (drag && drag.kind === 'pan') {
+    view.x = drag.vb.x - (ev.clientX - drag.sx) * drag.scale;
+    view.y = drag.vb.y - (ev.clientY - drag.sy) * drag.scale;
+    render(); return;
+  }
+  if (drag && drag.kind === 'comp') {
+    const c = getComp(drag.id); if (!c) return;
+    const nx = g[0] - drag.grab[0], ny = g[1] - drag.grab[1];
+    if (nx !== c.x || ny !== c.y) {
+      if (!drag.moved) { pushUndoRaw(drag.snap); drag.moved = true; }
+      c.x = nx; c.y = ny; updateLinks(c, drag.links); render();
+    }
+    return;
+  }
+  if (!mouseG || g[0] !== mouseG[0] || g[1] !== mouseG[1]) { mouseG = g; if (tool !== 'select') render(); }
+});
+function endDrag() {
+  if (drag && drag.kind === 'comp' && drag.moved) { cleanupWires(); render(); changed(); }
+  drag = null;
+}
+svg.addEventListener('pointerup', endDrag);
+svg.addEventListener('pointercancel', endDrag);
+svg.addEventListener('pointerleave', () => { if (!drag) { mouseG = null; if (tool !== 'select') render(); } });
+svg.addEventListener('wheel', ev => {
+  ev.preventDefault();
+  zoomAt(svgPt(ev), ev.deltaY > 0 ? 1.15 : 1 / 1.15);
+}, { passive: false });
+function zoomAt(p, f) {
+  const nw = view.w * f;
+  if (nw < 200 || nw > 6000) return;
+  view.x = p.x - (p.x - view.x) * f; view.y = p.y - (p.y - view.y) * f;
+  view.w = nw; view.h = view.h * f; render();
+}
+function fitView() {
+  const wrap = $('#canvasWrap');
+  const aspect = Math.max(0.5, (wrap.clientWidth || 800) / (wrap.clientHeight || 480));
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const addPt = (x, y) => { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); };
+  for (const c of circ.comps) for (const [x, y] of pinsOf(c)) addPt(x * S, y * S);
+  for (const w of circ.wires) { addPt(w.x1 * S, w.y1 * S); addPt(w.x2 * S, w.y2 * S); }
+  if (!isFinite(x0)) { x0 = 0; y0 = 0; x1 = 600; y1 = 360; }
+  x0 -= 70; y0 -= 70; x1 += 90; y1 += 70;
+  let w = Math.max(x1 - x0, 360), h = Math.max(y1 - y0, 240);
+  if (w / h < aspect) w = h * aspect; else h = w / aspect;
+  view = { x: (x0 + x1) / 2 - w / 2, y: (y0 + y1) / 2 - h / 2, w, h };
+  render();
+}
+$('#zoomIn').addEventListener('click', () => zoomAt({ x: view.x + view.w / 2, y: view.y + view.h / 2 }, 1 / 1.25));
+$('#zoomOut').addEventListener('click', () => zoomAt({ x: view.x + view.w / 2, y: view.y + view.h / 2 }, 1.25));
+$('#fitBtn').addEventListener('click', fitView);
+
+document.addEventListener('keydown', ev => {
+  const tag = (ev.target && ev.target.tagName) || '';
+  if (/INPUT|TEXTAREA|SELECT/.test(tag)) return;
+  if (!$('#jsonModal').hidden) { if (ev.key === 'Escape') closeModal(); return; }
+  if (!$('#guideModal').hidden) return;
+  const mod = ev.ctrlKey || ev.metaKey;
+  if (mod && (ev.key === 'z' || ev.key === 'Z')) { ev.preventDefault(); if (ev.shiftKey) redo(); else undo(); return; }
+  if (mod && (ev.key === 'y' || ev.key === 'Y')) { ev.preventDefault(); redo(); return; }
+  if (mod) return;
+  if (ev.key === 'r' || ev.key === 'R') { rotateSel(); ev.preventDefault(); }
+  else if (ev.key === 'Delete' || ev.key === 'Backspace') { if (sel) { deleteSel(); ev.preventDefault(); } }
+  else if (ev.key === 'Escape') {
+    if (tool === 'wire' && wireStart) { wireStart = null; render(); }
+    else if (tool !== 'select') setTool('select');
+    else if (sel) { sel = null; renderProps(); render(); }
+  }
+  else if (ev.key === 'w' || ev.key === 'W') setTool('wire');
+});
+
+// ---------- inspector ----------
+const NOTES = {
+  VAC: 'v(t) = Vpk · sin(2πft + phase). Current is shown as the current leaving the + terminal.',
+  VDC: 'The longer plate is the + terminal. Current is shown as the current leaving the + terminal.',
+  D: 'Turns on when the anode is Vf above the cathode, turns off when its current falls to zero. Set Vf to 0 for an ideal diode.',
+  SCR: 'Fires when forward biased and the gate pulse arrives at α + offset in each line cycle. It stays on until its current falls to zero. In a bridge, give the negative half-cycle thyristors an offset of 180°.',
+  TRIAC: 'Fires at α and at α + 180° in each line cycle, in either direction, and turns off at the next current zero.',
+  SW: 'Ideal switch (IGBT-style), gated on for the duty-cycle fraction of each period. It conducts only from pin 1 (square marker) to pin 2, so add an anti-parallel diode where reverse current must flow. Use a 180° delay for the complementary switches of a bridge.',
+  VM: 'Measures voltage from the + pin to the other pin. Draws no current.',
+  L: 'Current flows from pin 1 (square marker) to pin 2.',
+  C: 'Voltage is pin 1 (square marker) minus pin 2.',
+  R: 'Current flows from pin 1 (square marker) to pin 2.',
+  GND: 'Marks the 0 V reference node. Every circuit needs one.',
+};
+function renderProps() {
+  const el = $('#props');
+  if (sel && sel.kind === 'comp' && getComp(sel.id)) {
+    const c = getComp(sel.id), T = TYPES[c.type];
+    let h = `<div><div class="ptype">${esc(T.name)}</div></div>`;
+    if (c.type !== 'GND') h += `<input class="namein" id="pname" value="${esc(c.name)}" aria-label="Part name" maxlength="16"><div class="perr" id="pnameErr"></div>`;
+    for (const d of T.params) {
+      h += `<label class="prm"><span>${esc(d.label)}</span><span class="inp" id="w-${d.k}"><input id="p-${d.k}" data-k="${d.k}" value="${esc(fmtInput(c.p[d.k], d.unit))}" inputmode="decimal" autocomplete="off"><em>${d.unit}</em></span>`;
+      if (d.k === 'alpha') h += `<input type="range" id="r-alpha" min="0" max="180" step="1" value="${Math.max(0, Math.min(180, c.p.alpha))}" aria-label="Firing angle slider"><span class="chips" id="pChips">${[0, 30, 45, 60, 90, 120, 150].map(v => `<button type="button" class="chip${v === c.p.alpha ? ' on' : ''}" data-v="${v}">${v}°</button>`).join('')}</span>`;
+      if (d.k === 'duty') h += `<input type="range" id="r-duty" min="0" max="100" step="1" value="${c.p.duty}" aria-label="Duty cycle slider">`;
+      h += `</label>`;
+    }
+    h += `<div class="perr" id="pErr"></div>`;
+    if (c.type === 'SCR' || c.type === 'TRIAC') h += `<label class="chk"><input type="checkbox" id="linkA" ${linkAlpha ? 'checked' : ''}> Change α and line frequency on every thyristor and TRIAC together</label>`;
+    if (c.type === 'SW') h += `<label class="chk"><input type="checkbox" id="linkP" ${linkPWM ? 'checked' : ''}> Change frequency and duty on every switch together</label>`;
+    if (c.type !== 'GND') {
+      h += `<div class="toggles"><label class="chk"><input type="checkbox" id="plotV" ${c.plotV ? 'checked' : ''}> Plot voltage across <span class="nm">${esc(c.name)}</span></label>`;
+      if (c.type !== 'VM') h += `<label class="chk"><input type="checkbox" id="plotI" ${c.plotI ? 'checked' : ''}> Plot current through <span class="nm">${esc(c.name)}</span></label>`;
+      h += `</div>`;
+    }
+    if (NOTES[c.type]) h += `<p class="pnote">${NOTES[c.type]}</p>`;
+    h += `<div class="pbtns"><button type="button" class="btn" id="pRot">Rotate</button>`;
+    if (T.pins === 2) h += `<button type="button" class="btn" id="pFlip">Move label</button>`;
+    h += `<button type="button" class="btn danger" id="pDel">Delete</button></div>`;
+    el.innerHTML = h;
+    bindCompProps(c);
+    return;
+  }
+  if (sel && sel.kind === 'wire' && getWire(sel.id)) {
+    el.innerHTML = `<div class="ptype">Wire</div><h2>Wire segment</h2><p class="pnote">Wires join at their ends and where an end lands on another wire. Wires that only cross are not connected.</p><div class="pbtns"><button type="button" class="btn danger" id="pDel">Delete wire</button></div>`;
+    $('#pDel').addEventListener('click', deleteSel);
+    return;
+  }
+  const sm = circ.sim;
+  const steps = Math.round(sm.tstop / sm.dt);
+  el.innerHTML = `<div class="ptype">Simulation</div><h2>Time settings</h2>
+    <label class="prm"><span>Stop time</span><span class="inp" id="w-tstop"><input id="sim-tstop" data-k="tstop" value="${esc(fmtInput(sm.tstop, 's'))}" inputmode="decimal"><em>s</em></span></label>
+    <label class="prm"><span>Time step</span><span class="inp" id="w-dt"><input id="sim-dt" data-k="dt" value="${esc(fmtInput(sm.dt, 's'))}" inputmode="decimal"><em>s</em></span></label>
+    <label class="prm"><span>Show waveforms from</span><span class="inp" id="w-tfrom"><input id="sim-tfrom" data-k="tfrom" value="${esc(fmtInput(sm.tfrom || 0, 's'))}" inputmode="decimal"><em>s</em></span></label>
+    <div class="perr" id="pErr"></div>
+    <p class="pnote" id="stepNote">${isFinite(steps) ? steps.toLocaleString('en-US') : '—'} time steps. Use a step at least 50 times shorter than the switching period.</p>
+    <hr class="sep">
+    <ul class="tips">
+      <li><b>Place a part:</b> pick it on the left, then click the sheet. Press R to rotate.</li>
+      <li><b>Wire:</b> press W, click a pin, then click where the wire should go.</li>
+      <li><b>Edit values:</b> click a part. Values accept 10m, 470u, 2.2k.</li>
+      <li><b>Plot:</b> tick “Plot voltage” or “Plot current” on any part.</li>
+      <li><b>Read the scope:</b> hover for values, drag to zoom, double-click to reset. Conducting devices turn orange on the schematic.</li>
+    </ul>`;
+  el.querySelectorAll('input[data-k]').forEach(inp => inp.addEventListener('change', () => {
+    const k = inp.dataset.k, v = parseVal(inp.value);
+    const wrap = $('#w-' + k), err = $('#pErr');
+    let msg = '';
+    if (!isFinite(v)) msg = 'Enter a number, for example 20m or 0.02.';
+    else if (k !== 'tfrom' && !(v > 0)) msg = 'This must be greater than zero.';
+    else if (k === 'tfrom' && v < 0) msg = 'This cannot be negative.';
+    wrap.classList.toggle('bad', !!msg); err.textContent = msg;
+    if (msg) return;
+    pushUndo(); circ.sim[k] = v; inp.value = fmtInput(v, 's');
+    const st = Math.round(circ.sim.tstop / circ.sim.dt);
+    $('#stepNote').textContent = `${isFinite(st) ? st.toLocaleString('en-US') : '—'} time steps. Use a step at least 50 times shorter than the switching period.`;
+    changed();
+  }));
+}
+function validParam(d, v) {
+  if (!isFinite(v)) return 'Enter a number, for example 10m or 0.01.';
+  if (d.rule === 'pos' && !(v > 0)) return d.label + ' must be greater than zero.';
+  if (d.rule === 'nonneg' && v < 0) return d.label + ' cannot be negative.';
+  if (d.rule === 'pct' && (v < 0 || v > 100)) return 'Duty cycle must be between 0 and 100.';
+  if (d.rule === 'angle' && (v < 0 || v > 180)) return 'Firing angle must be between 0° and 180°.';
+  return '';
+}
+function applyParam(c, k, v) {
+  c.p[k] = v;
+  if ((c.type === 'SCR' || c.type === 'TRIAC') && linkAlpha && (k === 'alpha' || k === 'f')) {
+    for (const o of circ.comps) if (o !== c && (o.type === 'SCR' || o.type === 'TRIAC')) o.p[k] = v;
+  }
+  if (c.type === 'SW' && linkPWM && (k === 'f' || k === 'duty')) {
+    for (const o of circ.comps) if (o !== c && o.type === 'SW') o.p[k] = v;
+  }
+}
+function bindCompProps(c) {
+  const T = TYPES[c.type];
+  const nameIn = $('#pname');
+  if (nameIn) nameIn.addEventListener('change', () => {
+    const v = nameIn.value.trim();
+    let msg = '';
+    if (!v) msg = 'Give the part a name.';
+    else if (!/^[A-Za-z0-9_\-]+$/.test(v)) msg = 'Use letters, digits, - or _ only.';
+    else if (circ.comps.some(o => o !== c && o.name === v)) msg = 'Another part already uses this name.';
+    nameIn.classList.toggle('bad', !!msg); $('#pnameErr').textContent = msg;
+    if (msg) return;
+    if (v !== c.name) {
+      pushUndo();
+      const old = c.name; c.name = v;
+      if (circ.an) for (const k of ['vo', 'io', 'vs', 'is']) { if (circ.an[k] === `V(${old})`) circ.an[k] = `V(${v})`; else if (circ.an[k] === `I(${old})`) circ.an[k] = `I(${v})`; }
+      document.querySelectorAll('#props .nm').forEach(n => { n.textContent = v; });
+      render(); changed();
+    }
+  });
+  for (const d of T.params) {
+    const inp = $('#p-' + d.k);
+    inp.addEventListener('change', () => {
+      const v = parseVal(inp.value);
+      const msg = validParam(d, v);
+      $('#w-' + d.k).classList.toggle('bad', !!msg); $('#pErr').textContent = msg;
+      if (msg) return;
+      pushUndo(); applyParam(c, d.k, v);
+      inp.value = fmtInput(v, d.unit);
+      const r = $('#r-' + d.k); if (r) r.value = v;
+      render(); changed();
+    });
+  }
+  for (const k of ['alpha', 'duty']) {
+    const r = $('#r-' + k);
+    if (!r) continue;
+    r.addEventListener('input', () => {
+      if (!sliderUndo) { pushUndo(); sliderUndo = true; }
+      const v = +r.value;
+      applyParam(c, k, v);
+      $('#p-' + k).value = fmtInput(v, k === 'alpha' ? '°' : '%');
+      $('#w-' + k).classList.remove('bad'); $('#pErr').textContent = '';
+      render(); save(); updateCtrlBar();
+      if ($('#autoRun').checked) scheduleSim(60); else setStatusStale();
+    });
+    r.addEventListener('change', () => { sliderUndo = false; });
+  }
+  const pc = $('#pChips');
+  if (pc) pc.addEventListener('click', ev => {
+    const b = ev.target.closest('.chip'); if (!b) return;
+    ev.preventDefault();
+    pushUndo(); applyParam(c, 'alpha', +b.dataset.v);
+    $('#p-alpha').value = fmtInput(+b.dataset.v, '°'); $('#r-alpha').value = +b.dataset.v;
+    pc.querySelectorAll('.chip').forEach(q => q.classList.toggle('on', q === b));
+    render(); changed();
+  });
+  const la = $('#linkA'); if (la) la.addEventListener('change', () => { linkAlpha = la.checked; });
+  const lp = $('#linkP'); if (lp) lp.addEventListener('change', () => { linkPWM = lp.checked; });
+  const pv = $('#plotV'); if (pv) pv.addEventListener('change', () => { pushUndo(); c.plotV = pv.checked; changed(); });
+  const pi = $('#plotI'); if (pi) pi.addEventListener('change', () => { pushUndo(); c.plotI = pi.checked; changed(); });
+  $('#pRot').addEventListener('click', rotateSel);
+  const pf = $('#pFlip'); if (pf) pf.addEventListener('click', () => { pushUndo(); c.flip = !c.flip; render(); save(); });
+  $('#pDel').addEventListener('click', deleteSel);
+}
+
+// ---------- simulation ----------
+function runSim() {
+  clearTimeout(simTimer);
+  let r;
+  try { r = simulate(circ); } catch (e) { r = { error: 'The simulation stopped unexpectedly: ' + (e && e.message ? e.message : e) }; }
+  if (r.error) { result = null; simError = r.error; }
+  else {
+    simError = null;
+    const keep = result && plotWin && result.tstop === r.tstop && result.dt === r.dt;
+    result = r;
+    if (!keep) plotWin = defaultWin();
+  }
+  if (!result && playing) setPlaying(false);
+  if (cursorT !== null && (!result || cursorT > result.tstop)) cursorT = null;
+  updateScopeMsgs();
+  updateCtrlBar();
+  drawPlot();
+  render();
+  renderAnalysis();
+}
+function defaultWin() {
+  const t1 = result.tstop;
+  let t0 = Math.max(0, +circ.sim.tfrom || 0);
+  if (t0 >= t1 - result.dt * 4) t0 = 0;
+  return [t0, t1];
+}
+function updateScopeMsgs() {
+  const box = $('#scopeMsg');
+  let h = '';
+  if (simError) h += `<div class="msg err">${esc(simError)}</div>`;
+  else if (result) {
+    for (const w of result.warnings) h += `<div class="msg warn">${esc(w)}</div>`;
+    if (!result.signals.length) h += `<div class="msg info">Nothing is plotted yet. Click a part and tick “Plot voltage” or “Plot current”.</div>`;
+  }
+  box.innerHTML = h;
+  $('#simStatus').textContent = result ? `${result.steps.toLocaleString('en-US')} steps · ${fmtQty(result.dt, 's', 3)} step · solved in ${Math.max(1, Math.round(result.ms))} ms` : '';
+}
+
+// ---------- control bar: firing angle, duty, animation, display ----------
+const ALPHA_PRESETS = [0, 30, 45, 60, 90, 120, 150];
+const DUTY_PRESETS = [10, 25, 50, 75, 90];
+let ctrlUndo = false, xMode = 'time', showLanes = true;
+let playing = false, playRaf = 0, playLast = 0;
+const thyristors = () => circ.comps.filter(c => c.type === 'SCR' || c.type === 'TRIAC');
+const switches = () => circ.comps.filter(c => c.type === 'SW');
+function updateCtrlBar() {
+  const th = thyristors(), sw = switches();
+  $('#alphaCtl').hidden = !th.length;
+  $('#dutyCtl').hidden = !sw.length;
+  if (th.length) {
+    const al = th[0].p.alpha;
+    const r = $('#alphaRange');
+    if (document.activeElement !== r) r.value = Math.max(0, Math.min(180, al));
+    $('#alphaVal').textContent = trimDeg(al);
+    $('#alphaChips').querySelectorAll('.chip').forEach(b => b.classList.toggle('on', +b.dataset.v === al));
+    const isTcr = (circ.an && circ.an.theory === 'tcr');
+    $('#alphaMode').textContent = isTcr ? (al < 90 ? 'Below the TCR range: the reactor current gains a DC offset. Use 90° to 180°.' : `TCR range 90°–180°. At ${trimDeg(al)} the reactor ${al >= 180 ? 'is blocked' : 'draws partial current'}.`)
+      : al < 90 ? 'Rectifier mode (α < 90°): average output is positive.' : 'High delay (α ≥ 90°): average output falls to zero or below. Negative output needs a DC source in the load.';
+  }
+  if (sw.length) {
+    const d = sw[0].p.duty;
+    const r = $('#dutyRange');
+    if (document.activeElement !== r) r.value = d;
+    $('#dutyVal').textContent = (+d.toFixed(1)) + '%';
+    $('#dutyChips').querySelectorAll('.chip').forEach(b => b.classList.toggle('on', +b.dataset.v === d));
+  }
+  const bf = circ ? baseFreq(circ) : null;
+  const xm = $('#xMode');
+  xm.disabled = !bf;
+  if (!bf && xMode === 'deg') { xMode = 'time'; xm.value = 'time'; }
+  xm.options[1].textContent = bf && bf.kind === 'switch' ? 'Angle of switching period (°)' : 'Angle ωt (°)';
+}
+function setAllAlpha(v, push) {
+  if (push) pushUndo();
+  for (const c of thyristors()) c.p.alpha = v;
+  syncSelectedFields();
+  render(); save(); updateCtrlBar();
+}
+function setAllDuty(v, push) {
+  if (push) pushUndo();
+  for (const c of switches()) c.p.duty = v;
+  syncSelectedFields();
+  render(); save(); updateCtrlBar();
+}
+function syncSelectedFields() {
+  if (!sel || sel.kind !== 'comp') return;
+  const c = getComp(sel.id); if (!c) return;
+  for (const k of ['alpha', 'duty']) {
+    const inp = $('#p-' + k), r = $('#r-' + k);
+    if (inp && c.p[k] !== undefined) inp.value = fmtInput(c.p[k], k === 'alpha' ? '°' : '%');
+    if (r && c.p[k] !== undefined) r.value = c.p[k];
+  }
+}
+$('#alphaChips').innerHTML = ALPHA_PRESETS.map(v => `<button type="button" class="chip" data-v="${v}">${v}°</button>`).join('') + `<button type="button" class="chip" data-v="180">180°</button>`;
+$('#dutyChips').innerHTML = DUTY_PRESETS.map(v => `<button type="button" class="chip" data-v="${v}">${v}%</button>`).join('');
+$('#alphaRange').addEventListener('input', ev => {
+  if (!ctrlUndo) { pushUndo(); ctrlUndo = true; }
+  setAllAlpha(+ev.target.value, false);
+  if ($('#autoRun').checked) scheduleSim(60); else setStatusStale();
+});
+$('#alphaRange').addEventListener('change', () => { ctrlUndo = false; });
+$('#dutyRange').addEventListener('input', ev => {
+  if (!ctrlUndo) { pushUndo(); ctrlUndo = true; }
+  setAllDuty(+ev.target.value, false);
+  if ($('#autoRun').checked) scheduleSim(60); else setStatusStale();
+});
+$('#dutyRange').addEventListener('change', () => { ctrlUndo = false; });
+$('#alphaChips').addEventListener('click', ev => { const b = ev.target.closest('.chip'); if (!b) return; setAllAlpha(+b.dataset.v, true); runSim(); });
+$('#dutyChips').addEventListener('click', ev => { const b = ev.target.closest('.chip'); if (!b) return; setAllDuty(+b.dataset.v, true); runSim(); });
+$('#xMode').addEventListener('change', ev => { xMode = ev.target.value; drawPlot(); updateCursorCells(); });
+$('#showLanes').addEventListener('change', ev => { showLanes = ev.target.checked; drawPlot(); });
+
+function playPeriod() {
+  const bf = baseFreq(circ);
+  return bf ? 1 / bf.f : (plotWin[1] - plotWin[0]) / 4;
+}
+function setPlaying(on) {
+  playing = on && !!result;
+  $('#playBtn').textContent = playing ? 'Pause' : 'Play';
+  cancelAnimationFrame(playRaf);
+  if (!playing) return;
+  if (cursorT === null || cursorT < plotWin[0] || cursorT >= plotWin[1]) cursorT = plotWin[0];
+  playLast = performance.now();
+  const step = now => {
+    if (!playing || !result) return;
+    const dtReal = Math.min(0.1, (now - playLast) / 1000); playLast = now;
+    cursorT += dtReal * (+$('#speedSel').value) * playPeriod();
+    if (cursorT > plotWin[1]) cursorT = plotWin[0];
+    refreshCursor();
+    playRaf = requestAnimationFrame(step);
+  };
+  playRaf = requestAnimationFrame(step);
+}
+function refreshCursor() {
+  drawOverlay(); updateCursorCells(); render();
+  if (result && plotWin && cursorT !== null) $('#scrub').value = Math.round((cursorT - plotWin[0]) / (plotWin[1] - plotWin[0]) * 1000);
+}
+$('#playBtn').addEventListener('click', () => setPlaying(!playing));
+$('#scrub').addEventListener('input', ev => {
+  if (!result) return;
+  setPlaying(false);
+  cursorT = plotWin[0] + (+ev.target.value / 1000) * (plotWin[1] - plotWin[0]);
+  refreshCursor();
+});
+
+// ---------- scope drawing ----------
+const plotWrap = $('#plotWrap'), cBase = $('#plotBase'), cOver = $('#plotOver');
+const PL = 74, PR = 14, PT = 8, AXIS = 26, LANE = 15, LANE_HEAD = 22;
+let panels = [], plotW = 0, plotH = 0, lanesTop = 0, lanesBot = 0;
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim() || '#888'; }
+function traceColor(i) { return cssVar('--t' + ((i % 6) + 1)); }
+function niceStep(range, target) {
+  const raw = range / Math.max(1, target);
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const n = raw / mag;
+  return (n < 1.5 ? 1 : n < 3 ? 2 : n < 7 ? 5 : 10) * mag;
+}
+function degStep(span, target) {
+  const raw = span / Math.max(1, target);
+  for (const s of [5, 10, 15, 30, 45, 90, 180, 360, 720, 1440, 2880, 5760, 11520]) if (s >= raw) return s;
+  return niceStep(span, target);
+}
+function timeUnit(span) { return span < 2e-3 ? [1e6, 'µs'] : span < 2 ? [1e3, 'ms'] : [1, 's']; }
+function idxRange() {
+  const dt = result.dt;
+  const i0 = Math.max(0, Math.ceil(plotWin[0] / dt) - 1);
+  const i1 = Math.min(result.steps - 1, Math.floor(plotWin[1] / dt + 1e-9) - 1);
+  return [i0, Math.max(i0, i1)];
+}
+function buildPanels() {
+  panels = [];
+  if (!result || !result.signals.length) return;
+  const sigs = result.signals.map((s, i) => ({ s, color: traceColor(i), i }));
+  if (layout === 'unit') {
+    for (const u of ['V', 'A']) { const g = sigs.filter(q => q.s.unit === u); if (g.length) panels.push({ unit: u, sigs: g }); }
+  } else for (const q of sigs) panels.push({ unit: q.s.unit, sigs: [q] });
+}
+function laneCount() { return result && showLanes ? result.sw.ids.length : 0; }
+function drawPlot() {
+  buildPanels();
+  const W = Math.max(280, plotWrap.clientWidth || 600);
+  const PH = layout === 'unit' ? 190 : (panels.length > 4 ? 110 : 130);
+  const GAP = 10;
+  const nl = panels.length ? laneCount() : 0;
+  const panelsH = panels.length ? panels.length * PH + (panels.length - 1) * GAP : 0;
+  const lanesH = nl ? GAP + LANE_HEAD + nl * LANE : 0;
+  const H = panels.length ? PT + panelsH + lanesH + AXIS : 0;
+  const dpr = window.devicePixelRatio || 1;
+  for (const cv of [cBase, cOver]) {
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    cv.style.height = H + 'px';
+  }
+  plotWrap.style.height = H + 'px';
+  plotW = W; plotH = H;
+  const ctx = cBase.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  if (!panels.length) { lanesTop = lanesBot = 0; drawOverlay(); updateTable(); return; }
+  const fg = cssVar('--muted'), gridC = cssVar('--line'), ink = cssVar('--ink'), panelBg = cssVar('--sheet');
+  const mono = '11px ' + cssVar('--f-mono');
+  const [i0, i1] = idxRange();
+  const dt = result.dt, t0 = plotWin[0], t1 = plotWin[1];
+  const x0 = PL, x1 = W - PR, pw = x1 - x0;
+  const tx = t => x0 + (t - t0) / (t1 - t0) * pw;
+  // x ticks (time or angle)
+  const bf = baseFreq(circ);
+  const ticks = [];
+  let unitLbl;
+  if (xMode === 'deg' && bf) {
+    const k = 360 * bf.f, d0 = t0 * k, d1 = t1 * k;
+    const st = degStep(d1 - d0, Math.max(3, Math.floor(pw / 80)));
+    for (let d = Math.ceil(d0 / st - 1e-9) * st; d <= d1 + 1e-9; d += st) ticks.push({ t: d / k, label: String(Math.round(d)) + '°' });
+    unitLbl = 'ωt';
+  } else {
+    const [tScale, tUnit] = timeUnit(t1 - t0);
+    const tStep = niceStep(t1 - t0, Math.max(3, Math.floor(pw / 90)));
+    for (let t = Math.ceil(t0 / tStep) * tStep; t <= t1 + 1e-15; t += tStep) ticks.push({ t, label: trimTick(t * tScale, tStep * tScale) });
+    unitLbl = tUnit;
+  }
+  panels.forEach((P, pi) => {
+    const top = PT + pi * (PH + GAP), bot = top + PH;
+    P.top = top; P.bot = bot;
+    let mn = Infinity, mx = -Infinity;
+    for (const q of P.sigs) { const d = q.s.data; for (let i = i0; i <= i1; i++) { const v = d[i]; if (v < mn) mn = v; if (v > mx) mx = v; } }
+    if (!isFinite(mn)) { mn = -1; mx = 1; }
+    if (mx - mn < 1e-9 * Math.max(1, Math.abs(mx))) { const c0 = mn; mn = c0 - (Math.abs(c0) * 0.1 || 1); mx = c0 + (Math.abs(c0) * 0.1 || 1); }
+    const padv = (mx - mn) * 0.08; mn -= padv; mx += padv;
+    P.mn = mn; P.mx = mx;
+    const ty = v => bot - (v - mn) / (mx - mn) * PH;
+    P.ty = ty;
+    ctx.fillStyle = panelBg; ctx.fillRect(x0, top, pw, PH);
+    ctx.strokeStyle = gridC; ctx.lineWidth = 1;
+    ctx.font = mono; ctx.fillStyle = fg; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    const yStep = niceStep(mx - mn, PH > 150 ? 6 : 4);
+    for (let v = Math.ceil(mn / yStep) * yStep; v <= mx; v += yStep) {
+      const y = Math.round(ty(v)) + 0.5;
+      ctx.globalAlpha = Math.abs(v) < yStep * 1e-6 ? 1 : 0.6;
+      ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.fillText(fmtQty(Math.abs(v) < yStep * 1e-6 ? 0 : v, P.unit, 3), x0 - 6, y);
+    }
+    ctx.globalAlpha = 0.6;
+    for (const tk of ticks) { const x = Math.round(tx(tk.t)) + 0.5; ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, bot); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+    ctx.strokeRect(x0 + 0.5, top + 0.5, pw - 1, PH - 1);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x0, top, pw, PH); ctx.clip();
+    for (const q of P.sigs) drawTrace(ctx, q.s.data, i0, i1, dt, tx, ty, q.color, x0, pw);
+    ctx.restore();
+    ctx.font = '600 12px ' + cssVar('--f-body');
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    let lx = x0 + 8;
+    for (const q of P.sigs) {
+      const label = q.s.name;
+      const w = ctx.measureText(label).width;
+      ctx.fillStyle = panelBg; ctx.globalAlpha = 0.85; ctx.fillRect(lx - 4, top + 5, w + 22, 18); ctx.globalAlpha = 1;
+      ctx.fillStyle = q.color; ctx.fillRect(lx, top + 10, 9, 9);
+      ctx.fillStyle = ink; ctx.fillText(label, lx + 14, top + 8);
+      lx += w + 30;
+    }
+  });
+  // device lanes: gate pulses (thin) and conduction (thick)
+  lanesTop = lanesBot = PT + panelsH;
+  if (nl) {
+    const top = PT + panelsH + GAP;
+    lanesTop = top; lanesBot = top + LANE_HEAD + nl * LANE;
+    const hot = cssVar('--hot'), acc = cssVar('--accent');
+    ctx.fillStyle = panelBg; ctx.fillRect(x0, top, pw, lanesBot - top);
+    ctx.strokeStyle = gridC; ctx.strokeRect(x0 + 0.5, top + 0.5, pw - 1, lanesBot - top - 1);
+    ctx.globalAlpha = 0.6;
+    for (const tk of ticks) { const x = Math.round(tx(tk.t)) + 0.5; ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, lanesBot); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+    ctx.font = '600 11px ' + cssVar('--f-body'); ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    ctx.fillStyle = acc; ctx.fillRect(x0 + 8, top + 8, 10, 3);
+    ctx.fillStyle = ink; ctx.fillText('Gate pulse', x0 + 22, top + 10);
+    ctx.fillStyle = hot; ctx.fillRect(x0 + 104, top + 6, 10, 8);
+    ctx.fillStyle = ink; ctx.fillText('Conducting', x0 + 118, top + 10);
+    const S = result.sw.states, n = result.sw.ids.length;
+    const count = i1 - i0 + 1, per = count / pw;
+    for (let j = 0; j < n; j++) {
+      const y = top + LANE_HEAD + j * LANE;
+      ctx.fillStyle = fg; ctx.textAlign = 'right'; ctx.font = mono;
+      ctx.fillText(result.sw.names[j], x0 - 6, y + LANE / 2);
+      ctx.strokeStyle = gridC; ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.moveTo(x0, y + LANE - 0.5); ctx.lineTo(x1, y + LANE - 0.5); ctx.stroke(); ctx.globalAlpha = 1;
+      const hasGate = result.sw.types[j] !== 'D';
+      for (const bit of hasGate ? [2, 1] : [1]) {
+        ctx.fillStyle = bit === 1 ? hot : acc;
+        const yy = bit === 1 ? y + 5 : y + 2, hh = bit === 1 ? 7 : 2.5;
+        let runStart = -1;
+        for (let px = 0; px <= pw; px++) {
+          let on = false;
+          if (px < pw) {
+            const a = i0 + Math.floor(px * per), b = Math.max(a, Math.min(i1, i0 + Math.floor((px + 1) * per) - 1));
+            for (let i = a; i <= b; i++) if (S[i * n + j] & bit) { on = true; break; }
+          }
+          if (on && runStart < 0) runStart = px;
+          if (!on && runStart >= 0) { ctx.fillRect(x0 + runStart, yy, Math.max(1.5, px - runStart), hh); runStart = -1; }
+        }
+      }
+    }
+  }
+  // x axis labels
+  const yA = (nl ? lanesBot : PT + panelsH) + 6;
+  ctx.font = mono; ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const tk of ticks) {
+    const x = tx(tk.t);
+    if (x < x0 + 12 || x > x1 - 22) continue;
+    ctx.fillText(tk.label, x, yA);
+  }
+  ctx.textAlign = 'right'; ctx.fillText(unitLbl, x1, yA);
+  drawOverlay();
+  updateTable();
+}
+function trimTick(v, step) {
+  const dec = Math.max(0, -Math.floor(Math.log10(step) + 1e-9));
+  return (+v.toFixed(Math.min(6, dec))).toString().replace('-', '−');
+}
+function drawTrace(ctx, d, i0, i1, dt, tx, ty, color, x0, pw) {
+  ctx.strokeStyle = color; ctx.lineWidth = 1.6; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  const n = i1 - i0 + 1;
+  if (n <= pw * 2) {
+    for (let i = i0; i <= i1; i++) { const x = tx((i + 1) * dt), y = ty(d[i]); if (i === i0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+  } else {
+    const per = n / pw;
+    let first = true;
+    for (let px = 0; px < pw; px++) {
+      const a = i0 + Math.floor(px * per), b = Math.min(i1, i0 + Math.floor((px + 1) * per) - 1);
+      if (b < a) continue;
+      let mn = Infinity, mx = -Infinity, imn = a, imx = a;
+      for (let i = a; i <= b; i++) { const v = d[i]; if (v < mn) { mn = v; imn = i; } if (v > mx) { mx = v; imx = i; } }
+      const x = x0 + px + 0.5;
+      const yA = ty(imn < imx ? mn : mx), yB = ty(imn < imx ? mx : mn);
+      if (first) { ctx.moveTo(x, yA); first = false; } else ctx.lineTo(x, yA);
+      ctx.lineTo(x, yB);
+    }
+  }
+  ctx.stroke();
+}
+let zoomSel = null;
+function drawOverlay() {
+  const dpr = window.devicePixelRatio || 1;
+  const ctx = cOver.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, plotW, plotH);
+  if (!result || !panels.length) return;
+  const x0 = PL, x1 = plotW - PR, pw = x1 - x0;
+  const t0 = plotWin[0], t1 = plotWin[1];
+  const lastBot = Math.max(panels[panels.length - 1].bot, lanesBot);
+  if (zoomSel) {
+    const a = Math.max(x0, Math.min(zoomSel[0], zoomSel[1])), b = Math.min(x1, Math.max(zoomSel[0], zoomSel[1]));
+    ctx.fillStyle = cssVar('--accent'); ctx.globalAlpha = 0.14;
+    ctx.fillRect(a, PT, b - a, lastBot - PT); ctx.globalAlpha = 1;
+  }
+  if (cursorT === null || cursorT < t0 || cursorT > t1) return;
+  const x = Math.round(x0 + (cursorT - t0) / (t1 - t0) * pw) + 0.5;
+  ctx.strokeStyle = cssVar('--ink'); ctx.globalAlpha = 0.55; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+  ctx.beginPath(); ctx.moveTo(x, PT); ctx.lineTo(x, lastBot); ctx.stroke();
+  ctx.setLineDash([]); ctx.globalAlpha = 1;
+  const i = cursorIdx();
+  for (const P of panels) for (const q of P.sigs) {
+    const y = P.ty(q.s.data[i]);
+    if (y < P.top || y > P.bot) continue;
+    ctx.fillStyle = q.color; ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fill();
+  }
+}
+const cursorIdx = () => Math.min(result.steps - 1, Math.max(0, Math.round(cursorT / result.dt) - 1));
+function updateTable() {
+  const tb = $('#measTable');
+  if (!result || !result.signals.length) { tb.innerHTML = ''; $('#tnote').textContent = ''; $('#cursorRead').textContent = result ? '' : (simError ? '' : 'Run a simulation to see waveforms.'); return; }
+  const [i0, i1] = idxRange();
+  let h = '<thead><tr><th>Signal</th><th>At cursor</th><th>Average</th><th>RMS</th><th>Min</th><th>Max</th></tr></thead><tbody>';
+  result.signals.forEach((s, k) => {
+    const st = statsOf(s.data, i0, i1);
+    h += `<tr><td><span class="sw" style="background:${traceColor(k)}"></span>${esc(s.name)}</td><td class="cur" id="cur-${k}">—</td><td>${fmtQty(st.avg, s.unit)}</td><td>${fmtQty(st.rms, s.unit)}</td><td>${fmtQty(st.min, s.unit)}</td><td>${fmtQty(st.max, s.unit)}</td></tr>`;
+  });
+  h += `</tbody>`;
+  tb.innerHTML = h;
+  $('#tnote').textContent = `Average, RMS, min and max are measured over the visible window, ${fmtQty(plotWin[0], 's')} to ${fmtQty(plotWin[1], 's')}. Zoom in to measure a single cycle.`;
+  updateCursorCells();
+}
+function angleStr(t) {
+  const bf = baseFreq(circ);
+  if (!bf) return '';
+  const d = t * bf.f * 360;
+  return ` · ωt = ${Math.round(d)}° (${Math.round(((d % 360) + 360) % 360)}° in cycle)`;
+}
+function updateCursorCells() {
+  const rd = $('#cursorRead');
+  if (!result) return;
+  if (cursorT === null) {
+    result.signals.forEach((s, k) => { const td = $('#cur-' + k); if (td) td.textContent = '—'; });
+    rd.innerHTML = result.signals.length ? 'Hover over the waveforms, drag the scrub bar, or press Play to read values and see which devices conduct.' : '';
+    return;
+  }
+  const i = cursorIdx();
+  result.signals.forEach((s, k) => { const td = $('#cur-' + k); if (td) td.textContent = fmtQty(s.data[i], s.unit); });
+  const n = result.sw.ids.length, on = [];
+  for (let j = 0; j < n; j++) if (result.sw.states[i * n + j] & 1) on.push(result.sw.names[j]);
+  rd.innerHTML = `t = ${esc(fmtQty((i + 1) * result.dt, 's', 5))}${esc(angleStr((i + 1) * result.dt))}` + (n ? ` · conducting: <span class="hot">${on.length ? esc(on.join(' + ')) : 'none'}</span>` : '');
+}
+function tAtX(x) {
+  const x0 = PL, x1 = plotW - PR;
+  const f = Math.max(0, Math.min(1, (x - x0) / (x1 - x0)));
+  return plotWin[0] + f * (plotWin[1] - plotWin[0]);
+}
+let hoverRaf = 0;
+cOver.addEventListener('pointermove', ev => {
+  if (!result || !panels.length) return;
+  const r = cOver.getBoundingClientRect(), x = ev.clientX - r.left;
+  if (zoomSel) zoomSel[1] = x;
+  if (playing && !zoomSel) return;
+  cursorT = tAtX(x);
+  if (!hoverRaf) hoverRaf = requestAnimationFrame(() => { hoverRaf = 0; refreshCursor(); });
+});
+cOver.addEventListener('pointerdown', ev => {
+  if (!result || !panels.length || ev.button !== 0) return;
+  const r = cOver.getBoundingClientRect();
+  zoomSel = [ev.clientX - r.left, ev.clientX - r.left];
+  try { cOver.setPointerCapture(ev.pointerId); } catch (e) { /* ignore */ }
+});
+cOver.addEventListener('pointerup', () => {
+  if (!zoomSel) return;
+  const a = Math.min(zoomSel[0], zoomSel[1]), b = Math.max(zoomSel[0], zoomSel[1]);
+  zoomSel = null;
+  if (b - a > 6) {
+    const ta = tAtX(a), tb = tAtX(b);
+    if (tb - ta > result.dt * 4) { plotWin = [ta, tb]; drawPlot(); if (anMode === 'view') renderAnalysis(); return; }
+  }
+  drawOverlay();
+});
+cOver.addEventListener('pointercancel', () => { zoomSel = null; drawOverlay(); });
+cOver.addEventListener('pointerleave', () => {
+  if (zoomSel || playing) return;
+  cursorT = null; drawOverlay(); updateCursorCells(); render();
+});
+const resetZoom = () => { if (result) { plotWin = defaultWin(); drawPlot(); if (anMode === 'view') renderAnalysis(); } };
+cOver.addEventListener('dblclick', resetZoom);
+$('#resetZoom').addEventListener('click', resetZoom);
+$('#layoutSel').addEventListener('change', ev => { layout = ev.target.value; drawPlot(); });
+let resizeRaf = 0;
+new ResizeObserver(() => { if (!resizeRaf) resizeRaf = requestAnimationFrame(() => { resizeRaf = 0; drawPlot(); drawSpectrum(); }); }).observe(plotWrap);
+const redrawTheme = () => { drawPlot(); drawSpectrum(); };
+try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redrawTheme); } catch (e) { /* old browser */ }
+new MutationObserver(redrawTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
+
+// ---------- performance and theory ----------
+let anMode = 'steady', specData = null;
+function currentAn() {
+  if (circ.an && ['vo', 'io', 'vs', 'is'].some(k => circ.an[k] !== undefined)) return Object.assign({ vo: '', io: '', vs: '', is: '', theory: '' }, circ.an);
+  return guessAnalysis(circ);
+}
+function fmtNum(v, d = 3) { return isFinite(v) ? (+v).toFixed(d).replace('-', '−') : '—'; }
+function renderAnalysis() {
+  const sec = $('#analysis');
+  const msg = $('#anMsg');
+  if (!result) {
+    sec.querySelector('#metrics').innerHTML = ''; $('#theoryCard').innerHTML = ''; $('#seqTable').innerHTML = ''; $('#anSel').innerHTML = '';
+    $('#anWindow').textContent = ''; $('#seqNote').textContent = ''; specData = null; drawSpectrum();
+    msg.innerHTML = `<div class="msg info">Run a simulation to see the performance figures.</div>`;
+    return;
+  }
+  const an = currentAn();
+  // signal pickers
+  const opt = (unit, val) => '<option value="">None</option>' + result.signals.filter(s => s.unit === unit).map(s => `<option value="${esc(s.name)}"${s.name === val ? ' selected' : ''}>${esc(s.name)}</option>`).join('') + (val && !result.signals.find(s => s.name === val) ? `<option value="${esc(val)}" selected>${esc(val)} (not plotted)</option>` : '');
+  $('#anSel').innerHTML = `
+    <label>Output voltage vo<select id="an-vo">${opt('V', an.vo)}</select></label>
+    <label>Output current io<select id="an-io">${opt('A', an.io)}</select></label>
+    <label>Source voltage vs<select id="an-vs">${opt('V', an.vs)}</select></label>
+    <label>Source current is<select id="an-is">${opt('A', an.is)}</select></label>
+    <label>Formula to compare<select id="an-theory"><option value="">None</option>${Object.entries(THEORIES).map(([k, v]) => `<option value="${k}"${k === an.theory ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select></label>
+    <label>Measure over<select id="an-mode"><option value="steady"${anMode === 'steady' ? ' selected' : ''}>Last whole cycles (steady state)</option><option value="view"${anMode === 'view' ? ' selected' : ''}>Whole cycles in the visible window</option></select></label>`;
+  $('#anSel').querySelectorAll('select').forEach(s => s.addEventListener('change', () => {
+    if (s.id === 'an-mode') { anMode = s.value; renderAnalysis(); return; }
+    const cur = currentAn();
+    circ.an = { vo: $('#an-vo').value, io: $('#an-io').value, vs: $('#an-vs').value, is: $('#an-is').value, theory: $('#an-theory').value };
+    void cur; save(); renderAnalysis();
+  }));
+  const bf = baseFreq(circ);
+  if (!bf) { msg.innerHTML = `<div class="msg info">Add an AC source or a switch so the period of the waveforms is known.</div>`; clearAnalysisBody(); return; }
+  const tA = anMode === 'view' ? plotWin[0] : Math.max(+circ.sim.tfrom || 0, (bf.kind === 'switch' ? 0.8 : 0.5) * result.tstop);
+  const tB = anMode === 'view' ? plotWin[1] : result.tstop;
+  const w = cycleWindow(result, bf.f, tA, tB);
+  if (!w) {
+    msg.innerHTML = `<div class="msg info">The measurement needs at least one whole ${fmtQty(bf.f, 'Hz', 4)} cycle${anMode === 'view' ? ' inside the visible window. Zoom out or reset the zoom' : '. Increase the stop time'}.</div>`;
+    clearAnalysisBody(); return;
+  }
+  msg.innerHTML = '';
+  const freqLbl = `${fmtQty(bf.f, 'Hz', 4)} ${bf.kind === 'switch' ? 'switching' : 'line'}`;
+  $('#anWindow').textContent = `Measured over ${w.n} whole cycle${w.n > 1 ? 's' : ''} of the ${freqLbl} period, ${fmtQty(w.t0, 's')} to ${fmtQty(w.t1, 's')}`;
+  let m;
+  const nPh = circ.comps.filter(c => c.type === 'VAC').length;
+  const anX = Object.assign({}, an, { phases: nPh === 3 ? 3 : 1 });
+  try { m = computeMetrics(result, anX, bf.f, bf.kind, w); } catch (e) { msg.innerHTML = `<div class="msg err">The figures could not be calculated: ${esc(e.message)}</div>`; return; }
+  // metric tiles
+  const tiles = [];
+  const add = (k, v, d) => tiles.push(`<div class="metric"><span class="mk">${k}</span><span class="mv">${v}</span><span class="md">${d}</span></div>`);
+  if (m.have.vo) {
+    add('Average output Vdc', fmtQty(m.Vdc, 'V'), 'DC component of vo');
+    add('RMS output Vrms', fmtQty(m.Vrms, 'V'), 'True RMS of vo');
+  }
+  if (m.have.io) {
+    add('Average current Idc', fmtQty(m.Idc, 'A'), 'DC component of io');
+    add('RMS current Irms', fmtQty(m.Irms, 'A'), 'Sets conductor heating');
+  }
+  const acOut = an.theory === 'tcr' || an.theory === 'triac' || (m.have.vo && Math.abs(m.Vdc) < 0.02 * m.Vrms);
+  if (!acOut) {
+    if (m.Pdc !== undefined) add('DC power Pdc', fmtQty(m.Pdc, 'W'), 'Vdc × Idc');
+    if (m.FF !== undefined) add('Form factor FF', fmtNum(m.FF), 'Vrms / Vdc (pure DC = 1)');
+    if (m.RF !== undefined) add('Ripple factor RF', fmtNum(m.RF), '√(FF² − 1)');
+    if (m.eta !== undefined) add('Rectification efficiency <span class="nt">η</span>', fmtNum(m.eta * 100, 1) + '%', 'Pdc / (Vrms·Irms)');
+    if (m.have.vo) add('Output ripple', fmtQty(m.Vpp, 'V', 3) + ' p-p', m.fRipple ? `Main ripple at ${fmtQty(m.fRipple, 'Hz', 4)}` : 'Peak-to-peak of vo');
+  } else if (m.Io1 !== undefined) add('Fundamental current I1', fmtQty(m.Io1, 'A'), 'RMS of the 1st harmonic of io');
+  if (m.Pout !== undefined) add('Output power Pout', fmtQty(m.Pout, 'W'), 'Average of vo × io');
+  if (m.PF !== undefined) add('Input power factor', fmtNum(m.PF), anX.phases > 1 ? 'P / (3 · Vph,rms · Iph,rms)' : 'P / (Vs,rms · Is,rms)');
+  if (m.DPF !== undefined) add('Displacement factor', fmtNum(m.DPF), 'cos φ1 of the fundamental');
+  if (m.THD !== undefined) add('Source current THD', fmtNum(m.THD * 100, 1) + '%', 'Harmonics / fundamental');
+  if (m.Q1 !== undefined) add('Reactive power Q1', fmtQty(m.Q1 * (anX.phases || 1), 'var'), (anX.phases > 1 ? '3 × ' : '') + 'Vs1·Is1·sin φ1, fundamental');
+  if (m.Pin !== undefined) add('Input power', fmtQty(m.PinTot, 'W'), bf.kind === 'line' ? 'Average power from all AC sources' : 'Average power from the DC source');
+  if (m.effIn !== undefined) add('Power efficiency', fmtNum(m.effIn * 100, 1) + '%', 'Pout / Pin');
+  if (m.have.io) add('Conduction mode', m.ccm ? 'Continuous' : 'Discontinuous', m.ccm ? 'io never reaches zero' : 'io falls to zero each cycle');
+  $('#metrics').innerHTML = tiles.join('') || '';
+  if (!tiles.length) $('#anMsg').innerHTML = `<div class="msg info">Choose the output and source signals under “Signals used for the calculations”. Only plotted signals can be used.</div>`;
+  // spectrum
+  if (m.isH) specData = { title: `Source current harmonics (${an.is})`, h: m.isH, f: bf.f, thd: m.THD };
+  else if (m.ioH) specData = { title: `Output current harmonics (${an.io})`, h: m.ioH, f: bf.f, thd: null };
+  else specData = null;
+  $('#specTitle').textContent = specData ? specData.title : 'Harmonic spectrum';
+  $('#specNote').textContent = specData ? `RMS of each harmonic, % of fundamental${specData.thd !== null && specData.thd !== undefined ? ` · THD ${fmtNum(specData.thd * 100, 1)}%` : ''}` : 'Pick a source or output current to see its harmonics.';
+  drawSpectrum();
+  // theory
+  renderTheory(an, m);
+  // conduction sequence
+  const rows = conductionTable(result, w);
+  $('#seqNote').textContent = result.sw.ids.length ? `Last whole cycle. Angles are degrees of the ${freqLbl} period.` : '';
+  $('#seqTable').innerHTML = result.sw.ids.length ? '<thead><tr><th>Interval (°)</th><th>Conducting devices</th><th>Duration</th></tr></thead><tbody>' +
+    rows.slice(0, 30).map(r => `<tr><td>[${fmtNum(r.a, 0)}°, ${fmtNum(r.b, 0)}°]</td><td>${r.devs ? esc(r.devs) : 'None (all blocking)'}</td><td>${fmtNum(r.b - r.a, 0)}°</td></tr>`).join('') + '</tbody>'
+    : '<tbody><tr><td>This circuit has no switching devices.</td></tr></tbody>';
+}
+function clearAnalysisBody() {
+  $('#metrics').innerHTML = ''; $('#theoryCard').innerHTML = ''; $('#seqTable').innerHTML = ''; $('#anWindow').textContent = ''; $('#seqNote').textContent = '';
+  specData = null; drawSpectrum();
+}
+function renderTheory(an, m) {
+  const card = $('#theoryCard');
+  if (!an.theory) { card.innerHTML = `<div class="cardHead"><h3>Theory</h3></div><p class="pnote">Choose a formula under “Signals used for the calculations” to compare the simulation with the textbook result.</p>`; return; }
+  let T;
+  try { T = theory(an.theory, circ, m); } catch (e) { T = null; }
+  if (!T) { card.innerHTML = `<div class="cardHead"><h3>Theory</h3></div><p class="pnote">This formula needs parts the circuit does not have.</p>`; return; }
+  let h = `<div class="cardHead"><h3>${esc(T.title)}</h3>${m.have.io ? `<span class="pill ${m.ccm ? 'good' : 'mid'}">${m.ccm ? 'Continuous conduction' : 'Discontinuous conduction'}</span>` : ''}</div>`;
+  h += `<span class="tlabel">Equation</span><div class="eq">${T.eq.map(esc).join('\n')}</div>`;
+  h += `<span class="tlabel">With this circuit's values</span><div class="eq steps">${T.steps.map(esc).join('\n')}</div>`;
+  if (T.instant) h += `<span class="tlabel">Waveform</span><p class="pnote">${esc(T.instant)}</p>`;
+  if (T.cmp) {
+    const c = T.cmp, e = c.err;
+    let pill = '';
+    if (c.grade) {
+      const sc = Math.abs(c.scale || 0), big = isFinite(e) && Math.abs(c.value) >= 0.1 * sc;
+      const d = fmtQty(c.abs, c.unit, 3);
+      pill = c.grade === 'good' ? `<span class="pill good">${big ? `Matches within ${fmtNum(Math.max(Math.abs(e), 0.1), 1)}%` : `Matches (difference ${d})`}</span>`
+        : c.grade === 'mid' ? `<span class="pill mid">Close: ${big ? fmtNum(e, 1) + '%' : 'difference ' + d}</span>`
+        : `<span class="pill bad">Differs by ${d}${big ? ` (${fmtNum(e, 1)}%)` : ''}</span>`;
+    } else if (isFinite(e)) {
+      const ae = Math.abs(e);
+      pill = ae < 2 ? `<span class="pill good">Matches within ${fmtNum(Math.max(ae, 0.1), 1)}%</span>` : ae < 6 ? `<span class="pill mid">Close: ${fmtNum(e, 1)}%</span>` : `<span class="pill bad">Differs by ${fmtNum(e, 1)}%</span>`;
+    } else if (isFinite(c.abs)) {
+      const rel = Math.abs(c.abs) / Math.max(1e-9, m.Vrms || m.Irms || 1);
+      pill = `<span class="pill ${rel < 0.05 ? 'good' : 'mid'}">Differs by ${fmtQty(c.abs, c.unit, 3)}</span>`;
+    } else pill = isFinite(c.value) ? '<span class="pill mid">Signal not selected</span>' : '<span class="pill mid">Circuit lacks the parts this formula needs</span>';
+    h += `<span class="tlabel">${esc(c.label)}</span><div class="cmpRow">
+      <div><span class="md">Theory</span><b>${fmtQty(c.value, c.unit)}</b></div>
+      <div><span class="md">Simulation</span><b>${isFinite(c.sim) ? fmtQty(c.sim, c.unit) : '—'}</b></div>
+      <div><span class="md">Difference</span>${pill}</div></div>`;
+  }
+  if (T.notes.length) h += `<ul class="tnotes">${T.notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul>`;
+  card.innerHTML = h;
+}
+function drawSpectrum() {
+  const cv = $('#specCanvas');
+  const W = Math.max(240, cv.parentElement.clientWidth || 400), H = 220;
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  const fg = cssVar('--muted'), gridC = cssVar('--line'), acc = cssVar('--accent'), ink = cssVar('--ink');
+  const mono = '10.5px ' + cssVar('--f-mono');
+  const L = 44, R = 8, T = 10, B = 26, pw = W - L - R, ph = H - T - B;
+  if (!specData) {
+    ctx.fillStyle = fg; ctx.font = '12px ' + cssVar('--f-body'); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('No spectrum to show', W / 2, H / 2); return;
+  }
+  const list = specData.h.list, f1 = list[0].rms || 1e-12;
+  const vals = list.map(q => q.rms / f1 * 100);
+  const mx = Math.max(100, ...vals);
+  const yStep = niceStep(mx, 4);
+  const top = Math.ceil(mx / yStep) * yStep;
+  const ty = v => T + ph - v / top * ph;
+  ctx.font = mono; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let v = 0; v <= top + 1e-9; v += yStep) {
+    const y = Math.round(ty(v)) + 0.5;
+    ctx.strokeStyle = gridC; ctx.globalAlpha = v === 0 ? 1 : 0.6; ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(W - R, y); ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.fillStyle = fg; ctx.fillText(Math.round(v) + '%', L - 5, y);
+  }
+  const n = vals.length, bw = pw / n;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  vals.forEach((v, k) => {
+    const x = L + k * bw + bw * 0.18, w = Math.max(2, bw * 0.64);
+    const y = ty(Math.min(v, top));
+    ctx.fillStyle = k === 0 ? ink : acc;
+    ctx.fillRect(x, y, w, T + ph - y);
+    if (n <= 25 && (bw > 16 || (k + 1) % 2 === 1)) { ctx.fillStyle = fg; ctx.fillText(String(k + 1), x + w / 2, T + ph + 5); }
+  });
+  ctx.textAlign = 'right'; ctx.fillStyle = fg; ctx.fillText('harmonic', W - R, T + ph + 15);
+}
+
+// ---------- guide ----------
+const GUIDE = `
+<p>This bench simulates the circuit you draw, step by step in time. Each diode and thyristor is modelled as a switch with a small on-resistance and a forward drop, so the waveforms and the numbers below them come from the circuit itself, not from a formula.</p>
+<h3>Build and run</h3>
+<ul>
+<li>Pick a part on the left and click the sheet to place it. Press R to rotate, W to draw wires, Esc to stop.</li>
+<li>Click any part to edit it. Values accept 10m, 470u, 2.2k and so on.</li>
+<li>Tick “Plot voltage” or “Plot current” on a part to add it to the scope.</li>
+<li>Every circuit needs a ground symbol.</li>
+</ul>
+<h3>Controls on the scope</h3>
+<ul>
+<li><b>Firing angle α</b> sets every thyristor and TRIAC at once. Each device keeps its own phase offset, so bridges stay in sequence.</li>
+<li><b>Duty cycle</b> sets every MOSFET / IGBT switch at once.</li>
+<li><b>Play</b> sweeps a cursor through the waveforms. Conducting devices turn orange on the schematic, and live values appear next to each part.</li>
+<li><b>X axis</b> switches between time and angle ωt in degrees.</li>
+<li>Drag across the waveforms to zoom; double-click to reset.</li>
+</ul>
+<h3>How α is measured</h3>
+<p>For single-phase circuits α is measured from the zero crossing of the source. For three-phase circuits it is measured from the natural commutation point, 30° after the phase voltage crosses zero, so each thyristor gets a phase offset (30°, 90°, 150°, … for the 6-pulse bridge).</p>
+<h3>Performance figures</h3>
+<table>
+<tr><th>Figure</th><th>Definition</th></tr>
+<tr><td>Average output</td><td>Vdc = (1/T)∫vo dt</td></tr>
+<tr><td>Form factor</td><td>FF = Vrms / Vdc</td></tr>
+<tr><td>Ripple factor</td><td>RF = √(FF² − 1)</td></tr>
+<tr><td>Rectification efficiency</td><td>η = Pdc / (Vrms·Irms)</td></tr>
+<tr><td>Input power factor</td><td>PF = P / (Vs,rms·Is,rms)</td></tr>
+<tr><td>Displacement factor</td><td>DPF = cos φ1</td></tr>
+<tr><td>Current THD</td><td>THD = √(Σ In²) / I1, n ≥ 2</td></tr>
+</table>
+<p>All figures are integrated over whole cycles, so they are exact for the simulated waveforms.</p>
+<h3>Textbook formulas</h3>
+<table>
+<tr><th>Converter</th><th>Average output</th></tr>
+<tr><td>1-phase half-wave, diode</td><td>Vm / π</td></tr>
+<tr><td>1-phase half-wave, thyristor, R</td><td>Vm(1 + cos α) / 2π</td></tr>
+<tr><td>1-phase half-wave, thyristor, RL</td><td>Vm(cos α − cos β) / 2π</td></tr>
+<tr><td>1-phase bridge, diode</td><td>2Vm / π</td></tr>
+<tr><td>1-phase full converter (CCM)</td><td>2Vm cos α / π</td></tr>
+<tr><td>1-phase semi-converter</td><td>Vm(1 + cos α) / π</td></tr>
+<tr><td>3-phase half-wave</td><td>3√3 Vm cos α / 2π</td></tr>
+<tr><td>3-phase bridge (6-pulse)</td><td>3√3 Vm cos α / π ≈ 1.35 VLL cos α</td></tr>
+<tr><td>TCR susceptance</td><td>B(α) = [2(π − α) + sin 2α] / πωL</td></tr>
+<tr><td>Buck / boost</td><td>D·Vin  /  Vin / (1 − D)</td></tr>
+</table>
+<h3>Limits of the model</h3>
+<ul>
+<li>Devices switch instantly. There is no reverse recovery, snubber behaviour or gate-drive delay.</li>
+<li>The MOSFET / IGBT switch conducts only forward. Add an anti-parallel diode where reverse current must flow.</li>
+<li>Sources are ideal unless you give them a series resistance.</li>
+</ul>`;
+$('#guideBody').innerHTML = GUIDE;
+$('#guideBtn').addEventListener('click', () => { $('#guideModal').hidden = false; $('#guideClose').focus(); });
+const closeGuide = () => { if ($('#guideModal').hidden) return; $('#guideModal').hidden = true; $('#guideBtn').focus(); };
+$('#guideClose').addEventListener('click', closeGuide);
+$('#guideModal').addEventListener('click', ev => { if (ev.target.id === 'guideModal') closeGuide(); });
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !$('#guideModal').hidden) closeGuide(); });
+
+// ---------- header controls ----------
+const exSel = $('#exSel');
+{
+  const groups = [];
+  for (const e of EXAMPLES) { let g = groups.find(q => q.name === e.group); if (!g) { g = { name: e.group, items: [] }; groups.push(g); } g.items.push(e); }
+  exSel.innerHTML = '<option value="">Choose a circuit…</option>' + groups.map(g => `<optgroup label="${esc(g.name)}">${g.items.map(e => `<option value="${e.id}">${esc(e.title)}</option>`).join('')}</optgroup>`).join('') + '<option value="__blank">Blank sheet</option>';
+}
+function loadExample(id) {
+  if (id === '__blank') circ = { comps: [], wires: [], sim: { tstop: 0.06, dt: 20e-6, tfrom: 0 }, an: {} };
+  else circ = normalize(exampleCircuit(EXAMPLES.find(e => e.id === id)));
+}
+exSel.addEventListener('change', () => {
+  const v = exSel.value;
+  if (!v) return;
+  pushUndo();
+  setPlaying(false);
+  loadExample(v);
+  sel = null; wireStart = null; result = null; cursorT = null; setTool('select');
+  renderProps(); fitView(); save();
+  runSim();
+});
+$('#runBtn').addEventListener('click', runSim);
+$('#autoRun').addEventListener('change', ev => { if (ev.target.checked) runSim(); });
+function openModal() {
+  $('#jsonText').value = JSON.stringify(serial(), null, 1);
+  $('#jsonErr').textContent = '';
+  $('#jsonModal').hidden = false;
+  $('#jsonText').focus();
+}
+function closeModal() { if ($('#jsonModal').hidden) return; $('#jsonModal').hidden = true; $('#jsonBtn').focus(); }
+$('#jsonBtn').addEventListener('click', openModal);
+$('#jsonClose').addEventListener('click', closeModal);
+$('#jsonModal').addEventListener('click', ev => { if (ev.target.id === 'jsonModal') closeModal(); });
+$('#jsonText').addEventListener('keydown', ev => { if (ev.key === 'Escape') closeModal(); });
+$('#jsonCopy').addEventListener('click', () => {
+  const ta = $('#jsonText');
+  const fallback = () => { ta.focus(); ta.select(); $('#jsonErr').textContent = 'Text selected. Press Ctrl+C (or ⌘C) to copy it.'; };
+  try {
+    navigator.clipboard.writeText(ta.value).then(() => { $('#jsonErr').textContent = 'Copied.'; }, fallback);
+  } catch (e) { fallback(); }
+});
+$('#jsonLoad').addEventListener('click', () => {
+  let obj;
+  try { obj = JSON.parse($('#jsonText').value); } catch (e) { $('#jsonErr').textContent = 'This text is not valid circuit data. Paste the full text you copied earlier.'; return; }
+  let c;
+  try { c = normalize(obj); } catch (e) { $('#jsonErr').textContent = e.message; return; }
+  pushUndo(); circ = c; sel = null; result = null; cursorT = null;
+  closeModal(); exSel.value = ''; renderProps(); fitView(); save(); runSim();
+});
+
+// ---------- boot ----------
+function boot() {
+  let loaded = null;
+  try { const s = localStorage.getItem(STORE_KEY); if (s) loaded = normalize(JSON.parse(s)); } catch (e) { loaded = null; }
+  if (loaded && loaded.comps.length) { circ = loaded; exSel.value = ''; }
+  else { loadExample('bridge-scr'); exSel.value = 'bridge-scr'; }
+  buildPalette();
+  setTool('select');
+  renderProps();
+  fitView();
+  runSim();
+}
+boot();
+})();
+</script>
+
+</body></html>
